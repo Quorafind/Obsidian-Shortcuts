@@ -57,21 +57,6 @@ export class HotkeyMonitor {
 	handleKeyDown(event: KeyboardEvent): void {
 		if (this.plugin.capturing) return;
 
-		if (this.isInputOrEditor(event)) {
-			if (event.key === 'Escape' && this.isTargetInCodeMirror(event)) {
-				this.handleEscapeOnEditor();
-			} else {
-				this.prepareForInput(event);
-				return;
-			}
-		}
-
-		if (event.key === 'i') {
-			this.handleFocusMode(event);
-		}
-
-		console.log(event.key, this.hotkeyMode, this.isInputOrEditor(event));
-
 		if (event.key === 'Escape' && this.hotkeyMode) {
 			this.hotkeyMode = false;
 			this.statusBarItem.setText('Shortcuts disabled');
@@ -81,8 +66,29 @@ export class HotkeyMonitor {
 			this.hotkeyMode = true;
 			this.notice = new Notice("Starting shortcuts mode", 0);
 			this.statusBarItem.setText('Shortcuts enabled');
+
+
+			if (this.isInputOrEditor(event)) {
+				if (event.key === 'Escape' && this.isTargetInCodeMirror(event)) {
+					this.handleEscapeOnEditor();
+				} else if (!this.hotkeyMode) {
+					this.prepareForInput(event);
+					return;
+				}
+			}
+
 			return;
 		}
+
+
+		if (event.key === 'i') {
+			this.handleFocusMode(event);
+			this.statusBarItem.setText('Shortcuts disabled');
+			this.notice?.hide();
+			
+		}
+
+		console.log(event.key, this.hotkeyMode, this.isInputOrEditor(event));
 
 
 		if (!this.hotkeyMode) {
@@ -95,13 +101,13 @@ export class HotkeyMonitor {
 		if (key) {  // Only update if key is not empty
 			this.updateCurrentSequence(key);
 			this.checkAndExecuteShortcut();
-			if (this.notice) {
-				const fragment = document.createDocumentFragment();
-				fragment.createDiv({
-					text: "Current sequence: " + this.formatSequence(this.currentSequence)
-				});
-				this.notice?.setMessage(fragment);
-			}
+			// if (this.notice) {
+			// 	const fragment = document.createDocumentFragment();
+			// 	fragment.createDiv({
+			// 		text: "Current sequence: " + this.formatSequence(this.currentSequence)
+			// 	});
+			// 	this.notice?.setMessage(fragment);
+			// }
 		}
 	}
 
@@ -228,7 +234,16 @@ export class HotkeyMonitor {
 		}
 
 		new Notice("Shortcut executed" + config.name);
-		this.notice?.setMessage("Shortcut executed" + config.name);
+		const fragment = document.createDocumentFragment();
+		fragment.createDiv({
+			text: "Previous shortcut executed: " + config.name
+		});
+		fragment.createEl("br");
+		fragment.createDiv({
+			text: "Press Escape to exit shortcuts mode or continue typing to execute another shortcut."
+		});
+
+		this.notice?.setMessage(fragment);
 
 		this.resetSequence();
 		this.resetSequenceTimer();
@@ -263,6 +278,9 @@ export class HotkeyMonitor {
 			if (editor.editor) {
 				this.editor = editor.editor;
 			}
+
+			this.app.workspace.activeEditor = null;
+
 		}
 	}
 
