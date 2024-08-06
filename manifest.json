@@ -1,10 +1,10 @@
 {
-	"id": "single-key",
-	"name": "Single Key",
-	"version": "0.0.1",
+	"id": "shortcuts",
+	"name": "Shortcuts",
+	"version": "0.1.0",
 	"minAppVersion": "0.15.0",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Boninall",
+	"description": "A shortcuts plugin for power users.",
+	"author": "Johnny & Boninall",
 	"authorUrl": "https://github.com/Quorafind",
 	"fundingUrl": {
 		"Buy Me a Coffee": "https://www.buymeacoffee.com/boninall",

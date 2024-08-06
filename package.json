@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-custom-plugin-starter",
-	"version": "0.0.1",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"name": "shortcuts",
+	"version": "0.1.0",
+	"description": "A shortcuts plugin for power users.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

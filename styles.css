@@ -6,3 +6,24 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+.shortcuts-setting-tab .setting-hotkey.mod-active {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	min-height: 28px;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+.shortcuts-setting-tab .setting-hotkey {
+
+	max-width: 250px;
+	word-wrap: break-word;
+	white-space: pre-wrap;
+}
+
+.shortcuts-setting-tab .setting-item-name {
+	max-width: 350px;
+	word-wrap: break-word;
+	white-space: pre-wrap;
+}

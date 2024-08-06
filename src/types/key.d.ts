@@ -6,7 +6,7 @@ type ActionType = 'FUNC' | 'ID';
 type ModifierKey = Modifier;
 
 interface KeySequenceConfig {
-	sequence: string[];
+	sequence: string[][];
 	name: string;
 	action: Action | CommandId;
 	id: string;
