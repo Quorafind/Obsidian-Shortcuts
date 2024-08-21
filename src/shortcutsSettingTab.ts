@@ -1,7 +1,7 @@
 import {
 	App,
 	Component, ExtraButtonComponent,
-	Menu,
+	Menu, Modal, Platform,
 	PluginSettingTab,
 	prepareSimpleSearch,
 	SearchComponent,
@@ -12,6 +12,7 @@ import { AvailableScope, KeySequenceConfig, KeySequenceScope } from "./types/key
 import { KeySequenceSettings } from "./types/settings";
 import { AVAILABLE_CONFIGS } from "./keySequence";
 import ShortcutsPlugin from "./main";
+import keycode = require("keycode");
 
 const HEADER_ARRAY: AvailableScope[] = ['General', 'Canvas', 'Daily notes', 'Graph', 'Editor'];
 const HEADER_MAP: Record<AvailableScope, string> = {
@@ -27,7 +28,11 @@ export const DEFAULT_KEY_SEQUENCE_SETTINGS: KeySequenceSettings = {
 			scope: 'General',
 			configs: AVAILABLE_CONFIGS,
 		}
-	]
+	],
+	shortcutModeTrigger: 'Escape',
+	showKeyPressNotice: true,
+	showShortcutActivatedNotice: true,
+	keyboardLayout: 'qwerty',
 };
 
 interface CapturedKey {
@@ -59,6 +64,8 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 	private showShortcutsDom: Setting | null = null;
 	private showedCommands: number = 0;
 
+	private tempFunc: any;
+
 	constructor(app: App, plugin: ShortcutsPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
@@ -71,6 +78,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		containerEl.toggleClass('shortcuts-setting-tab', true);
 
 		this.filteredConfigs = this.filterAndSearchConfigs(AVAILABLE_CONFIGS);
+		this.createGeneralSettings(containerEl);
 		this.createSearchAndFilterComponents(containerEl);
 		this.generateHotkeyList();
 	}
@@ -85,6 +93,53 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.currentConfig = null;
 		this.searchQuery = '';
 		this.filterStatus = 'all';
+	}
+
+	createGeneralSettings(containerEl: HTMLElement): void {
+		const enterShortCutModeHotkeySetting = new Setting(containerEl)
+			.setName('Enter shortcut mode')
+			.setDesc("Press this key combination to enter shortcut mode");
+
+		const hotkeyContainer = enterShortCutModeHotkeySetting.controlEl.createDiv({cls: 'setting-command-hotkeys'});
+		this.renderShortcutModeTrigger(hotkeyContainer);
+
+		!this.plugin.settings.shortcutModeTrigger && enterShortCutModeHotkeySetting.addExtraButton((btn) =>
+			btn
+				.setIcon('plus-circle')
+				.setTooltip('Set shortcut mode trigger')
+				.onClick(() => {
+					this.captureShortcutModeTrigger(hotkeyContainer);
+				})
+		);
+
+		new Setting(containerEl).setName('Show key press visualizer').setDesc('Show the key presses on screen while in shortcut mode').addToggle((toggle) => {
+			toggle.setValue(this.plugin.settings.showKeyPressNotice).onChange((value) => {
+				this.plugin.settings.showKeyPressNotice = value;
+				this.plugin.saveSettings();
+			});
+		});
+
+		new Setting(containerEl).setName('Show shortcut activation signifier').setDesc('Show the toast notification that signals when a shortcut is activated').addToggle((toggle) => {
+			toggle.setValue(this.plugin.settings.showShortcutActivatedNotice).onChange((value) => {
+				this.plugin.settings.showShortcutActivatedNotice = value;
+				this.plugin.saveSettings();
+			});
+		});
+
+		// new Setting(containerEl).setName('Keyboard layout').setDesc('Select your keyboard layout').addDropdown((dropdown) => {
+		// 	dropdown.addOption('qwerty', 'QWERTY');
+		// 	dropdown.addOption('dvorak', 'Dvorak');
+		// 	dropdown.addOption('colemak', 'Colemak');
+		// 	dropdown.setValue(this.plugin.settings.keyboardLayout).onChange((value) => {
+		// 		this.plugin.settings.keyboardLayout = value;
+		// 		this.plugin.saveSettings();
+		// 	});
+		// });
+
+		const dividerEl = containerEl.createDiv({cls: 'settings-divider'}, (el) => {
+			const iconEl = el.createSpan({cls: 'settings-divider-icon'});
+			setIcon(iconEl, 'scissors');
+		});
 	}
 
 	createSearchAndFilterComponents(containerEl: HTMLElement): void {
@@ -169,7 +224,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 				this.filteredConfigs = this.filterAndSearchConfigs(configs);
 				this.showedCommands = this.showedCommands + this.filteredConfigs.length;
 				if (this.filteredConfigs.length > 0) {
-					new Setting(this.hotkeyContainer).setHeading().setName(HEADER_MAP[header]);
+					// new Setting(this.hotkeyContainer).setHeading().setName(HEADER_MAP[header]);
 					for (const config of this.filteredConfigs) {
 						this.createShortcutSetting(this.hotkeyContainer, config, header);
 					}
@@ -208,7 +263,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		setting.addExtraButton((btn) =>
 			btn
-				.setIcon('plus')
+				.setIcon('plus-circle')
 				.setTooltip('Add hotkey')
 				.onClick(() => {
 					this.commandId = config.id;
@@ -228,7 +283,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		if (config.sequence.length > 0) {
 			const hotkeySpan = containerEl.createSpan({cls: 'setting-hotkey'});
-			hotkeySpan.setText(this.formatSequence(config.sequence) === ' ' ? 'Space' : this.formatSequence(config.sequence));
+			hotkeySpan.setText(this.formatSequence(config.sequence));
 			const deleteButton = hotkeySpan.createSpan({
 				cls: 'setting-hotkey-icon setting-delete-hotkey',
 			}, (el) => {
@@ -251,7 +306,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			});
 			this.captureHotkey(activeSpan, config);
 		} else if (config.sequence.length === 0) {
-			containerEl.createSpan({cls: 'setting-hotkey mod-empty', text: 'Not set'});
+			containerEl.createSpan({cls: 'setting-hotkey mod-empty', text: 'Blank'});
 		}
 	}
 
@@ -306,6 +361,8 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			if (modifierKeys.includes(keyCode)) {
 				pressedModifiers.delete(keyCode);
 			}
+
+			console.log(pressedModifiers.size, this.capturedKeys.size, modifierKeys.includes(keyCode));
 
 			// If all keys are released, update the sequence
 			if (this.capturedKeys.size > 0 && pressedModifiers.size === 0 && !modifierKeys.includes(keyCode)) {
@@ -375,29 +432,201 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		}
 	}
 
-	formatSequence(sequence: string[][]): string {
-		return sequence.join(' then ');
+	convertToMacModifier(key: string): string {
+		if (Platform.isMacOS) {
+			return key.replace('meta', 'cmd').replace('alt', 'option');
+		} else return key;
+	}
+
+	formatSequence(sequence: string[][]): DocumentFragment {
+
+		const fragment = document.createDocumentFragment();
+		if (sequence.join(' then ') === ' ') {
+			fragment.createEl('span', {text: 'Space', cls: 'individual-key'});
+			return fragment;
+		}
+
+		sequence.forEach((combo, index) => {
+			const comboSpan = fragment.createEl('span', {cls: 'key-combo'});
+
+			combo.forEach((key, keyIndex) => {
+				const keySpan = comboSpan.createEl('span', {
+					text: this.convertToMacModifier(key),
+					cls: 'individual-key'
+				});
+				if (keyIndex < combo.length - 1) {
+					comboSpan.createEl('span', {text: '+', cls: 'key-separator'});
+				}
+			});
+
+			if (index < sequence.length - 1) {
+				fragment.createEl('span', {text: 'then', cls: 'combo-separator'});
+			}
+		});
+
+		return fragment;
 	}
 
 	getKeyStringFromCode(keyCode: number): string {
 		// Implement a function to convert keyCode to key string
 		// You can use a mapping or switch statement for common keys
 		// For example:
-		switch (keyCode) {
-			case 16:
-				return 'Shift';
-			case 17:
-				return 'Ctrl';
-			case 18:
-				return 'Alt';
-			case 91:
-			case 93:
-				return 'Meta';
-			case 32:
-				return 'Space';
-			// Add more cases as needed
-			default:
-				return String.fromCharCode(keyCode);
+		// switch (keyCode) {
+		// 	case 16:
+		// 		return 'Shift';
+		// 	case 17:
+		// 		return 'Ctrl';
+		// 	case 18:
+		// 		return 'Alt';
+		// 	case 91:
+		// 	case 93:
+		// 		return 'Meta';
+		// 	case 32:
+		// 		return 'Space';
+		// 	case 27:
+		// 		return 'Escape';
+		// 	case 9:
+		// 		return 'Tab';
+		// 	case 13:
+		// 		return 'Enter';
+		// 	default:
+		// 		return String.fromCharCode(keyCode);
+		// }
+
+		return keycode(keyCode);
+	}
+
+	renderShortcutModeTrigger(containerEl: HTMLElement): void {
+		containerEl.empty();
+
+		if (this.plugin.settings.shortcutModeTrigger) {
+			const hotkeySpan = containerEl.createSpan({cls: 'setting-hotkey'});
+			hotkeySpan.setText(this.formatSequence([[this.plugin.settings.shortcutModeTrigger]]));
+			const deleteButton = hotkeySpan.createSpan({
+				cls: 'setting-hotkey-icon setting-delete-hotkey',
+			}, (el) => {
+				new ExtraButtonComponent(el).setIcon('x').onClick(() => {
+					this.plugin.settings.shortcutModeTrigger = '';
+					this.plugin.saveSettings();
+
+					this.renderShortcutModeTrigger(containerEl);
+
+					this.display();
+				});
+			});
 		}
 	}
+
+	captureShortcutModeTrigger(containerEl: HTMLElement): void {
+		const activeSpan = containerEl.createSpan({cls: 'setting-hotkey mod-active', text: 'Press hotkey...'});
+		const confirmButton = containerEl.createSpan({
+			cls: 'setting-hotkey-icon setting-confirm-hotkey',
+		}, (el) => {
+			new ExtraButtonComponent(el).setIcon('check').setTooltip('Finish capture').onClick(() => {
+				this.finishShortcutModeTriggerCapture(containerEl);
+
+				this.display();
+			});
+		});
+
+		this.isCapturing = true;
+		this.capturedKeys = new Set();
+		this.lastKeyDownTime = 0;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (!this.isCapturing) return;
+			e.preventDefault();
+			e.stopPropagation();
+
+			const keyCode = e.keyCode;
+			const now = Date.now();
+
+			if (!this.capturedKeys.has(keyCode) || (now - this.lastKeyDownTime) > this.COMBO_THRESHOLD) {
+				this.capturedKeys.clear();
+				this.capturedKeys.add(keyCode);
+			}
+
+			this.lastKeyDownTime = now;
+			this.updateShortcutModeTriggerDisplay(activeSpan);
+		};
+
+		const handleKeyUp = (e: KeyboardEvent) => {
+			if (!this.isCapturing) return;
+
+			if (this.capturedKeys.size > 0) {
+				this.updateShortcutModeTriggerDisplay(activeSpan);
+			}
+		};
+
+		this.innerComponent = new Component();
+		containerEl.focus();
+		this.tempFunc = this.setting.scope.keys[0].func;
+		this.setting.scope.keys[0].func = () => {
+		};
+		this.innerComponent.registerDomEvent(document, 'keydown', handleKeyDown);
+		this.innerComponent.registerDomEvent(document, 'keyup', handleKeyUp);
+	}
+
+	updateShortcutModeTriggerDisplay(activeSpan: HTMLElement): void {
+		const combo = Array.from(this.capturedKeys).map(this.getKeyStringFromCode).join('+');
+		activeSpan.setText(combo);
+	}
+
+	finishShortcutModeTriggerCapture(containerEl: HTMLElement): void {
+		this.isCapturing = false;
+		const combo = Array.from(this.capturedKeys).map(this.getKeyStringFromCode).join('+');
+
+		if (combo) {
+			this.plugin.settings.shortcutModeTrigger = combo.toLowerCase();
+			this.plugin.saveSettings();
+		}
+
+		this.innerComponent?.unload();
+		this.renderShortcutModeTrigger(containerEl);
+
+		this.setting.scope.keys[0].func = this.tempFunc;
+	}
+
 }
+
+//
+//
+// class BlankModal extends Modal {
+// 	handlers: {
+// 		handleKeyDown: (e: KeyboardEvent) => void;
+// 		handleKeyUp: (e: KeyboardEvent) => void;
+// 	};
+//
+// 	constructor(
+// 		app: App,
+// 		readonly component: Component,
+// 		handleKeyDown: (e: KeyboardEvent) => void,
+// 		handleKeyUp: (e: KeyboardEvent) => void,
+// 	) {
+// 		super(app);
+// 		this.handlers = {
+// 			handleKeyDown,
+// 			handleKeyUp
+// 		};
+// 	}
+//
+// 	onOpen(): void {
+// 		this.modalEl.detach();
+//
+// 		this.removeExistingKeys();  // Call this method before registering new events
+//
+// 		this.component.registerDomEvent(this.containerEl, 'keydown', this.handlers.handleKeyDown);
+// 		this.component.registerDomEvent(this.containerEl, 'keyup', this.handlers.handleKeyUp);
+// 	}
+//
+// 	onClose() {
+// 		this.containerEl.onkeydown = null;
+// 		this.containerEl.onkeyup = null;
+//
+// 		super.onClose();
+// 	}
+//
+// 	removeExistingKeys(): void {
+// 		this.scope.keys.length = 0;
+// 	}
+// }

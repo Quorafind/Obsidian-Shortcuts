@@ -10,7 +10,6 @@ If your plugin does not need CSS, delete this file.
 .shortcuts-setting-tab .setting-hotkey.mod-active {
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
-	min-height: 28px;
 	padding-left: 8px;
 	padding-right: 8px;
 }
@@ -26,4 +25,67 @@ If your plugin does not need CSS, delete this file.
 	max-width: 350px;
 	word-wrap: break-word;
 	white-space: pre-wrap;
+}
+
+.shortcuts-setting-tab .key-separator, .shortcuts-setting-tab .combo-separator {
+	font-size: var(--font-ui-smaller);
+}
+
+.shortcuts-setting-tab .key-combo {
+	text-transform: capitalize;
+}
+
+.shortcuts-setting-tab .individual-key {
+	font-size: var(--font-ui-small);
+	text-transform: capitalize;
+}
+
+.shortcuts-setting-tab .setting-delete-hotkey {
+	margin-left: var(--size-2-2);
+}
+
+.shortcuts-setting-tab .setting-delete-hotkey .clickable-icon {
+	padding: 0;
+}
+
+.shortcuts-setting-tab .setting-filter-container:empty {
+	margin-bottom: var(--size-4-2);
+}
+
+.shortcuts-setting-tab .setting-delete-hotkey .clickable-icon:hover {
+	color: var(--interactive-accent);
+}
+
+.shortcuts-setting-tab .settings-divider {
+	display: flex;
+	align-items: center;
+	margin-top: var(--size-4-2);
+	margin-bottom: var(--size-4-2);
+}
+
+.shortcuts-setting-tab .settings-divider::before {
+	content: "";
+	flex-grow: 1;
+	background-image: linear-gradient(to right, var(--background-modifier-border) 33%, transparent 0%);
+	background-position: bottom;
+	background-size: 15px 1px;
+	background-repeat: repeat-x;
+	height: 1px;
+}
+
+.shortcuts-setting-tab .settings-divider-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding-left: var(--size-2-2);
+	color: var(--text-faint);
+}
+
+.shortcuts-status-item.mod-active .clickable-icon {
+	color: var(--icon-color-active)
+}
+
+.shortcuts-status-item .clickable-icon {
+	padding: 0;
+	--icon-size: 14px;
 }

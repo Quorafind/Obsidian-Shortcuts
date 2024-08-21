@@ -1,5 +1,5 @@
 import { KeySequenceConfig } from "./types/key";
-import { App, Editor, EditorPosition, Notice } from "obsidian";
+import { App, Editor, EditorPosition, ExtraButtonComponent, Notice, Platform, setIcon, setTooltip } from "obsidian";
 import ShortcutsPlugin from "./main";
 import { AVAILABLE_CONFIGS } from "./keySequence";
 
@@ -25,10 +25,10 @@ export class HotkeyMonitor {
 
 	private pressedModifiers: Set<string> = new Set();
 	private readonly modifierKeyMap: { [key: string]: string } = {
-		'Control': 'Ctrl',
-		'Alt': 'Alt',
-		'Shift': 'Shift',
-		'Meta': 'Meta'
+		'Control': 'ctrl',
+		'Alt': 'alt',
+		'Shift': 'shift',
+		'Meta': 'meta',
 	};
 
 	private notice: Notice | null = null;
@@ -39,7 +39,14 @@ export class HotkeyMonitor {
 
 		this.plugin = plugin;
 		this.statusBarItem = this.plugin.addStatusBarItem();
-		this.statusBarItem.setText('Shortcuts disabled');
+
+
+		this.statusBarItem.toggleClass(["shortcuts-status-item"], true);
+		new ExtraButtonComponent(this.statusBarItem).setIcon('scissors').onClick(() => {
+			this.hotkeyMode = !this.hotkeyMode;
+			this.statusBarItem.toggleClass("mod-active", this.hotkeyMode);
+			this.cancelShortcuts();
+		});
 	}
 
 	unload(): void {
@@ -54,18 +61,29 @@ export class HotkeyMonitor {
 		this.hotkeyMode = false;
 	}
 
+	convertToMacModifier(key: string): string {
+		if (!Platform.isMacOS) {
+			return key.replace('meta', 'command').replace('alt', 'option');
+		} else return key;
+	}
+
+	cancelShortcuts(): void {
+		this.hotkeyMode = false;
+		this.statusBarItem.toggleClass("mod-active", false);
+		this.resetSequence();
+		this.notice?.hide();
+	}
+
 	handleKeyDown(event: KeyboardEvent): void {
 		if (this.plugin.capturing) return;
+		if (document.body.find('.modal-container') && (this.plugin.settings.shortcutModeTrigger === 'esc' || !this.plugin.settings.shortcutModeTrigger)) return;
 
 		if (event.key === 'Escape' && this.hotkeyMode) {
-			this.hotkeyMode = false;
-			this.statusBarItem.setText('Shortcuts disabled');
-			this.resetSequence();
-			this.notice?.hide();
+			this.cancelShortcuts();
 		} else if (event.key === 'Escape' && !this.hotkeyMode) {
 			this.hotkeyMode = true;
-			this.notice = new Notice("Starting shortcuts mode", 0);
-			this.statusBarItem.setText('Shortcuts enabled');
+			this.notice = this.plugin.settings.showShortcutActivatedNotice ? new Notice("Starting shortcuts mode", 0) : null;
+			this.statusBarItem.toggleClass("mod-active", true);
 
 
 			if (this.isInputOrEditor(event)) {
@@ -81,14 +99,12 @@ export class HotkeyMonitor {
 		}
 
 
-		if (event.key === 'i') {
+		if (event.key === 'i' && this.currentSequence.length === 0) {
 			this.handleFocusMode(event);
-			this.statusBarItem.setText('Shortcuts disabled');
+			this.statusBarItem.toggleClass("mod-active", false);
 			this.notice?.hide();
-			
-		}
 
-		console.log(event.key, this.hotkeyMode, this.isInputOrEditor(event));
+		}
 
 
 		if (!this.hotkeyMode) {
@@ -114,7 +130,7 @@ export class HotkeyMonitor {
 	private updateMessage(message: string, matches: number): void {
 		const fragment = document.createDocumentFragment();
 		fragment.createDiv({
-			text: "Current sequence: " + message
+			text: "Current sequence: " + this.convertToMacModifier(message)
 		});
 		fragment.createDiv({
 			text: "Matches found: " + matches
@@ -126,10 +142,10 @@ export class HotkeyMonitor {
 		const modifiers: string[] = [];
 
 		// Check for modifier keys
-		if (event.ctrlKey) modifiers.push('Ctrl');
-		if (event.altKey) modifiers.push('Alt');
-		if (event.shiftKey) modifiers.push('Shift');
-		if (event.metaKey) modifiers.push('Meta');
+		if (event.ctrlKey) modifiers.push('ctrl');
+		if (event.altKey) modifiers.push('alt');
+		if (event.shiftKey) modifiers.push('shift');
+		if (event.metaKey) modifiers.push('meta');
 
 		let key = event.key;
 
@@ -139,7 +155,7 @@ export class HotkeyMonitor {
 		}
 
 		// Special cases
-		if (key === ' ') key = 'Space';
+		if (key === ' ') key = 'space';
 		if (key.length === 1) key = key.toUpperCase();
 
 		// If the key is already in modifiers, don't add it again
@@ -183,10 +199,10 @@ export class HotkeyMonitor {
 		}
 		this.pressedModifiers.delete(key);
 
-		if (!event.ctrlKey) this.pressedModifiers.delete('Ctrl');
-		if (!event.altKey) this.pressedModifiers.delete('Alt');
-		if (!event.shiftKey) this.pressedModifiers.delete('Shift');
-		if (!event.metaKey) this.pressedModifiers.delete('Meta');
+		if (!event.ctrlKey) this.pressedModifiers.delete('ctrl');
+		if (!event.altKey) this.pressedModifiers.delete('alt');
+		if (!event.shiftKey) this.pressedModifiers.delete('shift');
+		if (!event.metaKey) this.pressedModifiers.delete('meta');
 	}
 
 	// private updateCurrentSequence(key: string): void {
@@ -233,7 +249,7 @@ export class HotkeyMonitor {
 			this.app.commands.executeCommandById(config.action as CommandId);
 		}
 
-		new Notice("Shortcut executed" + config.name);
+		this.plugin.settings.showShortcutActivatedNotice && new Notice("Shortcut executed: " + config.name);
 		const fragment = document.createDocumentFragment();
 		fragment.createDiv({
 			text: "Previous shortcut executed: " + config.name
