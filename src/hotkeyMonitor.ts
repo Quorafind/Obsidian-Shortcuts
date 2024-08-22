@@ -33,6 +33,8 @@ export class HotkeyMonitor {
 		'Meta': 'meta',
 	};
 
+	private triggerKey: string;
+
 	private notice: Notice | null = null;
 
 	constructor(plugin: ShortcutsPlugin, app: App, shortcuts: KeySequenceConfig[]) {
@@ -49,6 +51,8 @@ export class HotkeyMonitor {
 			this.statusBarItem.toggleClass("mod-active", this.hotkeyMode);
 			this.cancelShortcuts();
 		});
+
+		this.triggerKey = this.plugin.settings.shortcutModeTrigger || 'esc';
 	}
 
 	unload(): void {
@@ -61,6 +65,11 @@ export class HotkeyMonitor {
 		this.notice?.hide();
 		this.notice = null;
 		this.hotkeyMode = false;
+	}
+
+	updateTriggerKey(): void {
+		this.triggerKey = this.plugin.settings.shortcutModeTrigger || 'esc';
+
 	}
 
 	convertToMacModifier(key: string): string {
@@ -80,16 +89,18 @@ export class HotkeyMonitor {
 		if (this.plugin.capturing) return;
 		if (document.body.find('.modal-container') && (this.plugin.settings.shortcutModeTrigger === 'esc' || !this.plugin.settings.shortcutModeTrigger)) return;
 
-		if (event.key === 'Escape' && this.hotkeyMode) {
+		console.log(event.key, event.keyCode, keycode(event.keyCode));
+
+		if (this.triggerKey === keycode(event.keyCode) && this.hotkeyMode) {
 			this.cancelShortcuts();
-		} else if (event.key === 'Escape' && !this.hotkeyMode) {
+		} else if (this.triggerKey === keycode(event.keyCode) && !this.hotkeyMode) {
 			this.hotkeyMode = true;
 			this.notice = this.plugin.settings.showShortcutActivatedNotice ? new Notice("Starting shortcuts mode", 0) : null;
 			this.statusBarItem.toggleClass("mod-active", true);
 
 
 			if (this.isInputOrEditor(event)) {
-				if (event.key === 'Escape' && this.isTargetInCodeMirror(event)) {
+				if (this.triggerKey === keycode(event.keyCode) && this.isTargetInCodeMirror(event)) {
 					this.handleEscapeOnEditor();
 				} else if (!this.hotkeyMode) {
 					this.prepareForInput(event);

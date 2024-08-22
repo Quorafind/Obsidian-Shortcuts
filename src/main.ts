@@ -40,6 +40,7 @@ export default class ShortcutsPlugin extends Plugin {
 		await this.saveData(this.settings);
 		const allConfigs: KeySequenceConfig[] = this.settings.sequences.flatMap(s => s.configs);
 		this.hotkeyMonitor.updateShortcuts(allConfigs);
+		this.hotkeyMonitor.updateTriggerKey();
 	}
 
 	onunload() {
