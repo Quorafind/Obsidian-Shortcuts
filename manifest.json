@@ -1,7 +1,7 @@
 {
 	"id": "shortcuts",
 	"name": "Shortcuts",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"minAppVersion": "0.15.0",
 	"description": "A shortcuts plugin for power users.",
 	"author": "Johnny & Boninall",
