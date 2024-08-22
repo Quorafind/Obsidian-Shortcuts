@@ -31,7 +31,10 @@ export class HotkeyMonitor {
 		'Alt': 'alt',
 		'Shift': 'shift',
 		'Meta': 'meta',
+		'Command': 'meta', // Add Command explicitly for Mac
 	};
+
+	private readonly macModifierKeys: Set<string> = new Set(['Meta', 'Command']);
 
 	private triggerKey: string;
 
@@ -156,7 +159,7 @@ export class HotkeyMonitor {
 		if (event.ctrlKey) modifiers.push('ctrl');
 		if (event.altKey) modifiers.push('alt');
 		if (event.shiftKey) modifiers.push('shift');
-		if (event.metaKey) modifiers.push('meta');
+		if (event.metaKey) modifiers.push(Platform.isMacOS ? 'meta' : 'ctrl');
 
 		let key = event.key;
 		let code = event.keyCode;
@@ -164,9 +167,13 @@ export class HotkeyMonitor {
 		// Normalize modifier keys
 		if (key in this.modifierKeyMap) {
 			key = this.modifierKeyMap[key];
-		} 
+		} else {
+			key = keycode(code);
+		}
 
-		key = keycode(code);
+		if (Platform.isMacOS && this.macModifierKeys.has(event.key)) {
+			return 'meta';
+		}
 
 		// Special cases
 		if (key === ' ') key = 'space';
