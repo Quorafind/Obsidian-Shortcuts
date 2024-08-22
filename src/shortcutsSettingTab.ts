@@ -490,7 +490,6 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.commandId = null;
 		if (this.currentSequence.length > 0 && config) {
 			config.sequence = this.currentSequence;
-			console.log(config.sequence);
 			this.plugin.saveSettings();
 		}
 

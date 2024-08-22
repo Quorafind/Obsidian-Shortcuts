@@ -89,7 +89,6 @@ export const AVAILABLE_CONFIGS: KeySequenceConfig[] = [
 		action: (app: App) => {
 			app.commands.executeCommandById('file-explorer:open');
 			const view = app.workspace.getLeavesOfType('file-explorer')[0]?.view;
-			console.log(view);
 			if (view) {
 				view.setSortOrder('byModifiedTime');
 			}
