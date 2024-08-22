@@ -572,30 +572,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 	}
 
 	getKeyStringFromCode(keyCode: number): string {
-		// Implement a function to convert keyCode to key string
-		// You can use a mapping or switch statement for common keys
-		// For example:
-		// switch (keyCode) {
-		// 	case 16:
-		// 		return 'Shift';
-		// 	case 17:
-		// 		return 'Ctrl';
-		// 	case 18:
-		// 		return 'Alt';
-		// 	case 91:
-		// 	case 93:
-		// 		return 'Meta';
-		// 	case 32:
-		// 		return 'Space';
-		// 	case 27:
-		// 		return 'Escape';
-		// 	case 9:
-		// 		return 'Tab';
-		// 	case 13:
-		// 		return 'Enter';
-		// 	default:
-		// 		return String.fromCharCode(keyCode);
-		// }
+		if (keycode === 93 || keycode === 91) return 'meta';
 
 		return keycode(keyCode);
 	}

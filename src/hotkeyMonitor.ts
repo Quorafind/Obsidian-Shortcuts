@@ -31,10 +31,7 @@ export class HotkeyMonitor {
 		'Alt': 'alt',
 		'Shift': 'shift',
 		'Meta': 'meta',
-		'Command': 'meta', // Add Command explicitly for Mac
 	};
-
-	private readonly macModifierKeys: Set<string> = new Set(['Meta', 'Command']);
 
 	private triggerKey: string;
 
@@ -72,7 +69,7 @@ export class HotkeyMonitor {
 
 	updateTriggerKey(): void {
 		this.triggerKey = this.plugin.settings.shortcutModeTrigger || 'esc';
-
+	
 	}
 
 	convertToMacModifier(key: string): string {
@@ -91,6 +88,8 @@ export class HotkeyMonitor {
 	handleKeyDown(event: KeyboardEvent): void {
 		if (this.plugin.capturing) return;
 		if (document.body.find('.modal-container') && (this.plugin.settings.shortcutModeTrigger === 'esc' || !this.plugin.settings.shortcutModeTrigger)) return;
+
+		console.log(event.key, event.keyCode, keycode(event.keyCode));
 
 		if (this.triggerKey === keycode(event.keyCode) && this.hotkeyMode) {
 			this.cancelShortcuts();
@@ -159,7 +158,7 @@ export class HotkeyMonitor {
 		if (event.ctrlKey) modifiers.push('ctrl');
 		if (event.altKey) modifiers.push('alt');
 		if (event.shiftKey) modifiers.push('shift');
-		if (event.metaKey) modifiers.push(Platform.isMacOS ? 'meta' : 'ctrl');
+		if (event.metaKey) modifiers.push('meta');
 
 		let key = event.key;
 		let code = event.keyCode;
@@ -167,17 +166,13 @@ export class HotkeyMonitor {
 		// Normalize modifier keys
 		if (key in this.modifierKeyMap) {
 			key = this.modifierKeyMap[key];
-		} else {
-			key = keycode(code);
 		}
 
-		if (Platform.isMacOS && this.macModifierKeys.has(event.key)) {
-			return 'meta';
-		}
+		key = keycode(code);
 
 		// Special cases
 		if (key === ' ') key = 'space';
-		if (key.length === 1) key = key.toLowerCase();
+		if (key.length === 1) key = key.toUpperCase();
 
 		// If the key is already in modifiers, don't add it again
 		if (!modifiers.includes(key)) {
