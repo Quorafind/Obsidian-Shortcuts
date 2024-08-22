@@ -12,7 +12,9 @@ import { AvailableScope, KeySequenceConfig, KeySequenceScope } from "./types/key
 import { KeySequenceSettings } from "./types/settings";
 import { AVAILABLE_CONFIGS } from "./keySequence";
 import ShortcutsPlugin from "./main";
-import keycode = require("keycode");
+
+const keycode = require('keycode');
+const confetti = require('canvas-confetti');
 
 const HEADER_ARRAY: AvailableScope[] = ['General', 'Canvas', 'Daily notes', 'Graph', 'Editor'];
 const HEADER_MAP: Record<AvailableScope, string> = {
@@ -61,6 +63,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 	private filteredConfigs: KeySequenceConfig[] = [];
 
 	private innerComponent: Component | null = null;
+	private konamiListener: Component | null = null;
 	private showShortcutsDom: Setting | null = null;
 	private showedCommands: number = 0;
 
@@ -81,12 +84,17 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.createGeneralSettings(containerEl);
 		this.createSearchAndFilterComponents(containerEl);
 		this.generateHotkeyList();
+		this.createHr(containerEl);
+		this.generateKonami(containerEl);
 	}
 
 	hide(): void {
 		this.plugin.capturing = false;
 		if (this.innerComponent) {
 			this.innerComponent.unload();
+		}
+		if (this.konamiListener) {
+			this.konamiListener.unload();
 		}
 		this.currentSequence = [];
 		this.commandId = null;
@@ -136,6 +144,10 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		// 	});
 		// });
 
+		this.createHr(containerEl);
+	}
+
+	createHr(containerEl: HTMLElement): void {
 		const dividerEl = containerEl.createDiv({cls: 'settings-divider'}, (el) => {
 			const iconEl = el.createSpan({cls: 'settings-divider-icon'});
 			setIcon(iconEl, 'scissors');
@@ -235,7 +247,102 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		if (this.showShortcutsDom) {
 			this.showShortcutsDom.setDesc("Showing " + this.showedCommands + " shortcuts");
 		}
+
+
 	}
+
+	generateKonami(containerEl: HTMLElement): void {
+		const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+		let konamiIndex = 0;
+
+		let comboEl: HTMLElement;
+		let iconEl: HTMLElement;
+		const container = containerEl.createDiv({
+			cls: "special-thanks-container",
+		});
+
+		container.createDiv({
+			cls: "special-container",
+		}, (el) => {
+			iconEl = el.createDiv({cls: 'special-icon'});
+			setIcon(iconEl, 'scissors');
+			const nameEl = el.createDiv({cls: 'special-name', text: 'Shortcuts'});
+			comboEl = el.createDiv({cls: 'special-combo'});
+			this.createKonamiIcons(comboEl, konamiCode);
+			const creditsEl = el.createDiv({cls: 'special-credits', text: 'by Johnny & Boninall'});
+			const versionEl = el.createDiv({cls: 'special-version', text: this.plugin.manifest.version});
+		});
+
+		this.konamiListener = new Component();
+
+		this.konamiListener.registerDomEvent(document, 'keydown', (event) => {
+			if (this.isCapturing) return;
+
+			if (event.key.toLowerCase() === konamiCode[konamiIndex].toLowerCase()) {
+				this.highlightKey(comboEl, konamiIndex);
+				konamiIndex++;
+				if (konamiIndex === konamiCode.length) {
+					iconEl.toggleClass('mod-active', true);
+					this.triggerConfetti();
+					setTimeout(() => {
+						window.open('https://github.com/Quorafind/Obsidian-Shortcuts/wiki/Donate', '_blank');
+					}, 400);
+
+					setTimeout(() => {
+						this.resetKonamiHighlight(comboEl);
+						iconEl.toggleClass('mod-active', false);
+					}, 1000);
+					konamiIndex = 0;
+				}
+			} else {
+				this.resetKonamiHighlight(comboEl);
+				konamiIndex = 0;
+			}
+		});
+
+
+	}
+
+	createKonamiIcons(comboEl: HTMLElement, konamiCode: string[]): void {
+		konamiCode.forEach(key => {
+			const span = comboEl.createSpan();
+			switch (key) {
+				case 'ArrowUp':
+					setIcon(span, 'arrow-up');
+					break;
+				case 'ArrowDown':
+					setIcon(span, 'arrow-down');
+					break;
+				case 'ArrowLeft':
+					setIcon(span, 'arrow-left');
+					break;
+				case 'ArrowRight':
+					setIcon(span, 'arrow-right');
+					break;
+				default:
+					span.setText(key.toUpperCase());
+			}
+		});
+	}
+
+	highlightKey(comboEl: HTMLElement, index: number): void {
+		const spans = comboEl.querySelectorAll('span');
+		spans[index].toggleClass('mod-active', true);
+	}
+
+	resetKonamiHighlight(comboEl: HTMLElement): void {
+		const spans = comboEl.querySelectorAll('span');
+		spans.forEach(span => span.toggleClass('mod-active', false));
+	}
+
+	triggerConfetti(): void {
+		confetti({
+			particleCount: 100,
+			spread: 70,
+			origin: {y: 0.6}
+		});
+	}
+
 
 	filterAndSearchConfigs(configs: KeySequenceConfig[]): KeySequenceConfig[] {
 		let filteredConfigsTemp = configs;
@@ -361,8 +468,6 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			if (modifierKeys.includes(keyCode)) {
 				pressedModifiers.delete(keyCode);
 			}
-
-			console.log(pressedModifiers.size, this.capturedKeys.size, modifierKeys.includes(keyCode));
 
 			// If all keys are released, update the sequence
 			if (this.capturedKeys.size > 0 && pressedModifiers.size === 0 && !modifierKeys.includes(keyCode)) {

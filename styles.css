@@ -16,7 +16,7 @@ If your plugin does not need CSS, delete this file.
 
 .shortcuts-setting-tab .setting-hotkey {
 
-	max-width: 250px;
+	max-width: 300px;
 	word-wrap: break-word;
 	white-space: pre-wrap;
 }
@@ -71,6 +71,77 @@ If your plugin does not need CSS, delete this file.
 	background-size: 15px 1px;
 	background-repeat: repeat-x;
 	height: 1px;
+}
+
+.shortcuts-setting-tab .special-thanks-container {
+	width: 100%;
+
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+}
+
+.shortcuts-setting-tab .special-container {
+	padding: var(--size-4-3);
+	margin-top: var(--size-4-2);
+
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+
+	border-radius: var(--radius-l);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+
+	gap: var(--size-2-1)
+}
+
+.shortcuts-setting-tab .special-container .special-icon {
+	--icon-size: 48px;
+}
+
+.shortcuts-setting-tab .special-container .special-icon.mod-active {
+	color: var(--icon-color-active);
+}
+
+.shortcuts-setting-tab .special-container .special-name {
+	font-size: var(--font-ui-large);
+	font-weight: var(--font-bold);
+}
+
+.shortcuts-setting-tab .special-container .special-combo {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: var(--font-ui-small);
+	--icon-size: 14px;
+
+	gap: var(--size-2-1)
+}
+
+.shortcuts-setting-tab .special-container .special-credits {
+	font-size: var(--font-ui-small);
+}
+
+.shortcuts-setting-tab .special-container .special-version {
+	color: var(--font-ui-small);
+}
+
+.shortcuts-setting-tab .special-container .special-combo span {
+	font-weight: var(--font-bold);
+	opacity: 40%;
+}
+
+.theme-dark .shortcuts-setting-tab .special-container .special-combo span.mod-active {
+	color: var(--icon-color-active);
+	opacity: 100%;
+}
+
+.theme-light .shortcuts-setting-tab .special-container .special-combo span.mod-active {
+	color: var(--text-faint);
 }
 
 .shortcuts-setting-tab .settings-divider-icon {

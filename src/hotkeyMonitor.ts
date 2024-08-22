@@ -3,6 +3,8 @@ import { App, Editor, EditorPosition, ExtraButtonComponent, Notice, Platform, se
 import ShortcutsPlugin from "./main";
 import { AVAILABLE_CONFIGS } from "./keySequence";
 
+const keycode = require('keycode');
+
 type Action = (app: App) => void;
 type CommandId = string;
 type ActionType = 'FUNC' | 'ID';
@@ -63,7 +65,7 @@ export class HotkeyMonitor {
 
 	convertToMacModifier(key: string): string {
 		if (!Platform.isMacOS) {
-			return key.replace('meta', 'command').replace('alt', 'option');
+			return key.replace(/meta/g, 'command').replace(/alt/g, 'option');
 		} else return key;
 	}
 
@@ -148,11 +150,14 @@ export class HotkeyMonitor {
 		if (event.metaKey) modifiers.push('meta');
 
 		let key = event.key;
+		let code = event.keyCode;
 
 		// Normalize modifier keys
 		if (key in this.modifierKeyMap) {
 			key = this.modifierKeyMap[key];
 		}
+
+		key = keycode(code);
 
 		// Special cases
 		if (key === ' ') key = 'space';

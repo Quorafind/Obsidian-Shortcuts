@@ -14,6 +14,7 @@ export default class ShortcutsPlugin extends Plugin {
 	pos: EditorPosition | null = null;
 
 	settings: KeySequenceSettings;
+	settingTab: ShortcutsSettingTab;
 	private hotkeyMonitor: HotkeyMonitor;
 
 	capturing: boolean = false;
@@ -23,7 +24,8 @@ export default class ShortcutsPlugin extends Plugin {
 		const allConfigs: KeySequenceConfig[] = this.settings.sequences.flatMap(s => s.configs);
 
 		this.hotkeyMonitor = new HotkeyMonitor(this, this.app, allConfigs);
-		this.addSettingTab(new ShortcutsSettingTab(this.app, this));
+		this.settingTab = new ShortcutsSettingTab(this.app, this);
+		this.addSettingTab(this.settingTab);
 		this.registerDomEvent(document, 'keydown', this.handleKeyDown.bind(this));
 		this.registerDomEvent(document, 'keyup', (event: KeyboardEvent) => {
 			this.hotkeyMonitor.handleKeyUp(event);
@@ -42,6 +44,7 @@ export default class ShortcutsPlugin extends Plugin {
 
 	onunload() {
 		this.hotkeyMonitor?.unload();
+		this.settingTab?.hide();
 	}
 
 	async loadSettings() {
