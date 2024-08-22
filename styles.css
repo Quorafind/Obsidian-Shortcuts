@@ -138,10 +138,17 @@ If your plugin does not need CSS, delete this file.
 .theme-dark .shortcuts-setting-tab .special-container .special-combo span.mod-active {
 	color: var(--icon-color-active);
 	opacity: 100%;
+
+	font-weight: var(--font-extrabold);
+	--icon-stroke: 2px;
 }
 
 .theme-light .shortcuts-setting-tab .special-container .special-combo span.mod-active {
-	color: var(--text-faint);
+	color: var(--text-error);
+	opacity: 100%;
+
+	font-weight: var(--font-extrabold);
+	--icon-stroke: 2px;
 }
 
 .shortcuts-setting-tab .settings-divider-icon {
