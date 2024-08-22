@@ -89,8 +89,6 @@ export class HotkeyMonitor {
 		if (this.plugin.capturing) return;
 		if (document.body.find('.modal-container') && (this.plugin.settings.shortcutModeTrigger === 'esc' || !this.plugin.settings.shortcutModeTrigger)) return;
 
-		console.log(event.key, event.keyCode, keycode(event.keyCode));
-
 		if (this.triggerKey === keycode(event.keyCode) && this.hotkeyMode) {
 			this.cancelShortcuts();
 		} else if (this.triggerKey === keycode(event.keyCode) && !this.hotkeyMode) {
@@ -166,13 +164,13 @@ export class HotkeyMonitor {
 		// Normalize modifier keys
 		if (key in this.modifierKeyMap) {
 			key = this.modifierKeyMap[key];
-		}
+		} 
 
 		key = keycode(code);
 
 		// Special cases
 		if (key === ' ') key = 'space';
-		if (key.length === 1) key = key.toUpperCase();
+		if (key.length === 1) key = key.toLowerCase();
 
 		// If the key is already in modifiers, don't add it again
 		if (!modifiers.includes(key)) {

@@ -31,7 +31,7 @@ export const DEFAULT_KEY_SEQUENCE_SETTINGS: KeySequenceSettings = {
 			configs: AVAILABLE_CONFIGS,
 		}
 	],
-	shortcutModeTrigger: 'Escape',
+	shortcutModeTrigger: 'esc',
 	showKeyPressNotice: true,
 	showShortcutActivatedNotice: true,
 	keyboardLayout: 'qwerty',
