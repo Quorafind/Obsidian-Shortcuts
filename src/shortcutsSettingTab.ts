@@ -508,6 +508,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 	}
 
 	updateCurrentSequence(): void {
+		console.log(this.capturedKeys)
 		// Shift, Ctrl, Alt, Meta (left), Meta (right)
 		const combo = Array.from(this.capturedKeys).sort((a, b) => {
 			const aIsModifier = modifierKeys.includes(a);
@@ -538,7 +539,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 	convertToMacModifier(key: string): string {
 		if (Platform.isMacOS) {
-			return key.replace('meta', 'cmd').replace('alt', 'option');
+			return key.replace('meta', 'command').replace('alt', 'option');
 		} else return key;
 	}
 
@@ -572,7 +573,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 	}
 
 	getKeyStringFromCode(keyCode: number): string {
-		if (keycode === 93 || keycode === 91) return 'meta';
+		if(keyCode === 91 || keyCode === 93) return 'meta';
 
 		return keycode(keyCode);
 	}

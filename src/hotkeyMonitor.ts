@@ -31,6 +31,7 @@ export class HotkeyMonitor {
 		'Alt': 'alt',
 		'Shift': 'shift',
 		'Meta': 'meta',
+		"Command": 'meta'
 	};
 
 	private triggerKey: string;
@@ -73,7 +74,7 @@ export class HotkeyMonitor {
 	}
 
 	convertToMacModifier(key: string): string {
-		if (!Platform.isMacOS) {
+		if (Platform.isMacOS) {
 			return key.replace(/meta/g, 'command').replace(/alt/g, 'option');
 		} else return key;
 	}
@@ -161,19 +162,14 @@ export class HotkeyMonitor {
 		if (event.metaKey) modifiers.push('meta');
 
 		let key = event.key;
-		let code = event.keyCode;
-
-		console.log(event, key, keycode(code), keycode(event.code));
 
 		// Normalize modifier keys
 		if (key in this.modifierKeyMap) {
 			key = this.modifierKeyMap[key];
+		} else {
+			key = keycode(event.keyCode);
 		}
 
-		key = keycode(code);
-
-		// Special cases
-		if (key === ' ') key = 'space';
 		if (key.length === 1) key = key.toUpperCase();
 
 		// If the key is already in modifiers, don't add it again
@@ -256,7 +252,7 @@ export class HotkeyMonitor {
 	}
 
 	private formatSequence(sequence: string[][]): string {
-		return [...sequence].map(combo => combo.sort().join('+')).join(' then ').toLowerCase();
+		return [...sequence].map(combo => combo.sort().join('+')).join(' then ').toLowerCase().replace(/meta/g, 'command').replace(/alt/g, 'option');
 	}
 
 	private executeAction(config: KeySequenceConfig): void {

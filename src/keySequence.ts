@@ -17,14 +17,14 @@ export class KeySequenceConfigClass {
 
 export const AVAILABLE_CONFIGS: KeySequenceConfig[] = [
 	{
-		sequence: [['Shift']],
+		sequence: [['shift']],
 		action: 'command-palette:open',
 		actionType: 'ID',
 		name: 'Open command palette',
 		id: 'command-palette:open',
 	},
 	{
-		sequence: [[' ']],
+		sequence: [['space']],
 		action: 'switcher:open',
 		actionType: 'ID',
 		name: 'Open switcher',
