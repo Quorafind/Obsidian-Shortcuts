@@ -664,7 +664,9 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		this.innerComponent = new Component();
 		containerEl.focus();
+		// @ts-ignore
 		this.tempFunc = this.setting.scope.keys[0].func;
+		// @ts-ignore
 		this.setting.scope.keys[0].func = () => {
 		};
 		this.innerComponent.registerDomEvent(document, 'keydown', handleKeyDown);
@@ -688,6 +690,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.innerComponent?.unload();
 		this.renderShortcutModeTrigger(containerEl);
 
+		// @ts-ignore
 		this.setting.scope.keys[0].func = this.tempFunc;
 	}
 
