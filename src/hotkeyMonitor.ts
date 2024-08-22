@@ -163,6 +163,8 @@ export class HotkeyMonitor {
 		let key = event.key;
 		let code = event.keyCode;
 
+		console.log(event, key, keycode(code), keycode(event.code));
+
 		// Normalize modifier keys
 		if (key in this.modifierKeyMap) {
 			key = this.modifierKeyMap[key];
