@@ -87,8 +87,8 @@ If your plugin does not need CSS, delete this file.
 	padding: var(--size-4-3);
 	margin-top: var(--size-4-2);
 
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--tag-background);
+	color: var(--interactive-accent);
 
 	border-radius: var(--radius-l);
 	display: flex;
@@ -104,11 +104,11 @@ If your plugin does not need CSS, delete this file.
 }
 
 .shortcuts-setting-tab .special-container .special-icon.mod-active {
-	color: var(--icon-color-active);
+	color: var(--interactive-accent);
 }
 
 .shortcuts-setting-tab .special-container .special-name {
-	font-size: var(--font-ui-large);
+	font-size: 15px;
 	font-weight: var(--font-bold);
 }
 
@@ -116,18 +116,18 @@ If your plugin does not need CSS, delete this file.
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: var(--font-ui-small);
-	--icon-size: 14px;
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
 
 	gap: var(--size-2-1)
 }
 
 .shortcuts-setting-tab .special-container .special-credits {
-	font-size: var(--font-ui-small);
+	font-size: 14px;
 }
 
 .shortcuts-setting-tab .special-container .special-version {
-	color: var(--font-ui-small);
+	font-size: var(--font-ui-smaller);
 }
 
 .shortcuts-setting-tab .special-container .special-combo span {

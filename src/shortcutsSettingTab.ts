@@ -308,16 +308,16 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			const span = comboEl.createSpan();
 			switch (key) {
 				case 'ArrowUp':
-					setIcon(span, 'arrow-up');
+					span.setText('↑');
 					break;
 				case 'ArrowDown':
-					setIcon(span, 'arrow-down');
+					span.setText('↓');
 					break;
 				case 'ArrowLeft':
-					setIcon(span, 'arrow-left');
+					span.setText('←');
 					break;
 				case 'ArrowRight':
-					setIcon(span, 'arrow-right');
+					span.setText('→');
 					break;
 				default:
 					span.setText(key.toUpperCase());
@@ -508,7 +508,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 	}
 
 	updateCurrentSequence(): void {
-		console.log(this.capturedKeys)
+		console.log(this.capturedKeys);
 		// Shift, Ctrl, Alt, Meta (left), Meta (right)
 		const combo = Array.from(this.capturedKeys).sort((a, b) => {
 			const aIsModifier = modifierKeys.includes(a);
@@ -573,7 +573,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 	}
 
 	getKeyStringFromCode(keyCode: number): string {
-		if(keyCode === 91 || keyCode === 93) return 'meta';
+		if (keyCode === 91 || keyCode === 93) return 'meta';
 
 		return keycode(keyCode);
 	}
