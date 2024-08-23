@@ -1,5 +1,5 @@
-import { App } from "obsidian";
-import { Action, ActionType, CommandId, KeySequenceConfig } from "./types/key";
+import { App, Command } from "obsidian";
+import { Action, ActionType, AvailableScope, CommandId, KeySequenceConfig, KeySequenceScope } from "./types/key";
 
 export class KeySequenceConfigClass {
 	sequence: string[][];
@@ -854,3 +854,61 @@ export const AVAILABLE_CONFIGS: KeySequenceConfig[] = [
 ];
 
 export const keyConfigs: KeySequenceConfigClass[] = AVAILABLE_CONFIGS.map((config) => new KeySequenceConfigClass(config));
+
+export function updateKeySequences(app: App, currentSequences: KeySequenceScope[]): KeySequenceScope[] {
+	const allCommands = app.commands.listCommands();
+	const editorCommandsSet = new Set(Object.keys(app.commands.editorCommands));
+	const generalCommandsSet = new Set(Object.keys(app.commands.commands));
+
+	// Helper function to determine the scope of a command
+	function getCommandScope(commandId: string): AvailableScope {
+		if (editorCommandsSet.has(commandId)) return 'Editor';
+		if (generalCommandsSet.has(commandId)) return 'General';
+		return 'General'; // Default to General if not found
+	}
+
+	// Create a map of all valid commands
+	const validCommands = new Map(allCommands.map(cmd => [cmd.id, cmd]));
+
+	// Initialize new sequences with all possible scopes
+	const newSequences: KeySequenceScope[] = [
+		{scope: 'General', configs: []},
+		{scope: 'Editor', configs: []},
+		{scope: 'Canvas', configs: []},
+		{scope: 'Daily notes', configs: []},
+		{scope: 'Graph', configs: []}
+	];
+
+	// Process existing configs
+	currentSequences.forEach(scope => {
+		scope.configs.forEach(config => {
+			if (config.actionType === 'ID' && validCommands.has(config.id)) {
+				const commandScope = getCommandScope(config.id);
+				const targetScope = newSequences.find(s => s.scope === commandScope);
+				if (targetScope && !targetScope.configs.some(c => c.id === config.id)) {
+					targetScope.configs.push(config);
+				}
+			}
+		});
+	});
+
+	// Add new commands that are not in the current sequences
+	allCommands.forEach(command => {
+		const commandScope = getCommandScope(command.id);
+		const targetScope = newSequences.find(s => s.scope === commandScope);
+		if (targetScope && !targetScope.configs.some(c => c.id === command.id)) {
+			targetScope.configs.push({
+				sequence: [], // Empty sequence, to be set by the user
+				name: command.name,
+				action: command.id,
+				id: command.id,
+				actionType: 'ID',
+			});
+		}
+	});
+
+	console.log(newSequences);
+
+	// Remove empty scopes
+	return newSequences.filter(scope => scope.configs.length > 0);
+}

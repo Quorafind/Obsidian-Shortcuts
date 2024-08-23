@@ -1,8 +1,9 @@
-import { Editor, EditorPosition, Plugin } from 'obsidian';
+import { Command, Editor, EditorPosition, Plugin } from 'obsidian';
 import { KeySequenceConfig } from "./types/key";
 import { KeySequenceSettings } from "./types/settings";
 import { HotkeyMonitor } from "./hotkeyMonitor";
 import { DEFAULT_KEY_SEQUENCE_SETTINGS, ShortcutsSettingTab } from "./shortcutsSettingTab";
+import { updateKeySequences } from "./keySequence";
 
 export default class ShortcutsPlugin extends Plugin {
 	currentSequence: string[] = [];
@@ -21,15 +22,28 @@ export default class ShortcutsPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		const allConfigs: KeySequenceConfig[] = this.settings.sequences.flatMap(s => s.configs);
 
-		this.hotkeyMonitor = new HotkeyMonitor(this, this.app, allConfigs);
+
 		this.settingTab = new ShortcutsSettingTab(this.app, this);
 		this.addSettingTab(this.settingTab);
+
+		this.app.workspace.onLayoutReady(() => {
+			this.initHotkeyMonitor();
+		});
+	}
+
+	async initHotkeyMonitor() {
+		this.settings.sequences = updateKeySequences(this.app, this.settings.sequences);
+
+
+		const allConfigs: KeySequenceConfig[] = this.settings.sequences.flatMap(s => s.configs);
+		this.hotkeyMonitor = new HotkeyMonitor(this, this.app, allConfigs);
+
 		this.registerDomEvent(document, 'keydown', this.handleKeyDown.bind(this));
 		this.registerDomEvent(document, 'keyup', (event: KeyboardEvent) => {
 			this.hotkeyMonitor.handleKeyUp(event);
 		});
+		await this.saveSettings();
 	}
 
 	handleKeyDown(event: KeyboardEvent) {

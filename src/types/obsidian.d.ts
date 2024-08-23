@@ -5,6 +5,11 @@ declare module "obsidian" {
 	interface App {
 		commands: {
 			executeCommandById(id: string): void;
+			listCommands(): Command[];
+
+			app: App;
+			editorCommands: Map<string, Command>;
+			commands: Map<string, Command>;
 		};
 	}
 

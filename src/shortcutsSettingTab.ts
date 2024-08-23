@@ -80,7 +80,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		containerEl.toggleClass('shortcuts-setting-tab', true);
 
-		this.filteredConfigs = this.filterAndSearchConfigs(AVAILABLE_CONFIGS);
+		this.filteredConfigs = this.filterAndSearchConfigs(this.plugin.settings.sequences[0].configs);
 		this.createGeneralSettings(containerEl);
 		this.createSearchAndFilterComponents(containerEl);
 		this.generateHotkeyList();
@@ -236,7 +236,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 				this.filteredConfigs = this.filterAndSearchConfigs(configs);
 				this.showedCommands = this.showedCommands + this.filteredConfigs.length;
 				if (this.filteredConfigs.length > 0) {
-					// new Setting(this.hotkeyContainer).setHeading().setName(HEADER_MAP[header]);
+					new Setting(this.hotkeyContainer).setHeading().setName(HEADER_MAP[header]);
 					for (const config of this.filteredConfigs) {
 						this.createShortcutSetting(this.hotkeyContainer, config, header);
 					}

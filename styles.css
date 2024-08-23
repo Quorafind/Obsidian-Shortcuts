@@ -19,6 +19,9 @@ If your plugin does not need CSS, delete this file.
 	max-width: 300px;
 	word-wrap: break-word;
 	white-space: pre-wrap;
+
+	display: flex;
+	flex-wrap: wrap;
 }
 
 .shortcuts-setting-tab .setting-item-name {
@@ -49,7 +52,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 .shortcuts-setting-tab .setting-filter-container:empty {
-	margin-bottom: var(--size-4-2);
+	margin-bottom: var(--size-4-4);
 }
 
 .shortcuts-setting-tab .setting-delete-hotkey .clickable-icon:hover {
