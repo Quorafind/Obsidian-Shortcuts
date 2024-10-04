@@ -135,6 +135,8 @@ export class HotkeyMonitor {
 		}
 
 		this.resetSequenceTimer();
+		event.preventDefault();
+		event.stopPropagation();
 
 		const key = this.getKeyString(event);
 		if (key) {
