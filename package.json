@@ -24,6 +24,7 @@
 	},
 	"dependencies": {
 		"canvas-confetti": "^1.9.3",
-		"keycode": "^2.2.1"
+		"keycode": "^2.2.1",
+		"monkey-around": "^3.0.0"
 	}
 }

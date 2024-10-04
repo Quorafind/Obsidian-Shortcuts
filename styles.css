@@ -15,7 +15,6 @@ If your plugin does not need CSS, delete this file.
 }
 
 .shortcuts-setting-tab .setting-hotkey {
-
 	max-width: 300px;
 	word-wrap: break-word;
 	white-space: pre-wrap;
@@ -30,7 +29,8 @@ If your plugin does not need CSS, delete this file.
 	white-space: pre-wrap;
 }
 
-.shortcuts-setting-tab .key-separator, .shortcuts-setting-tab .combo-separator {
+.shortcuts-setting-tab .key-separator,
+.shortcuts-setting-tab .combo-separator {
 	font-size: var(--font-ui-smaller);
 }
 
@@ -69,7 +69,11 @@ If your plugin does not need CSS, delete this file.
 .shortcuts-setting-tab .settings-divider::before {
 	content: "";
 	flex-grow: 1;
-	background-image: linear-gradient(to right, var(--background-modifier-border) 33%, transparent 0%);
+	background-image: linear-gradient(
+		to right,
+		var(--background-modifier-border) 33%,
+		transparent 0%
+	);
 	background-position: bottom;
 	background-size: 15px 1px;
 	background-repeat: repeat-x;
@@ -78,7 +82,6 @@ If your plugin does not need CSS, delete this file.
 
 .shortcuts-setting-tab .special-thanks-container {
 	width: 100%;
-
 
 	display: flex;
 	justify-content: center;
@@ -99,7 +102,7 @@ If your plugin does not need CSS, delete this file.
 	justify-content: center;
 	align-items: center;
 
-	gap: var(--size-2-1)
+	gap: var(--size-2-1);
 }
 
 .shortcuts-setting-tab .special-container .special-icon {
@@ -122,7 +125,7 @@ If your plugin does not need CSS, delete this file.
 	font-size: var(--font-ui-medium);
 	font-weight: var(--font-semibold);
 
-	gap: var(--size-2-1)
+	gap: var(--size-2-1);
 }
 
 .shortcuts-setting-tab .special-container .special-credits {
@@ -138,7 +141,31 @@ If your plugin does not need CSS, delete this file.
 	opacity: 40%;
 }
 
-.theme-dark .shortcuts-setting-tab .special-container .special-combo span.mod-active {
+.shortcuts-setting-tab .fold-indicator svg {
+	transform: rotate(90deg);
+	transition: transform 0.2s ease-in-out;
+}
+
+.shortcuts-setting-tab .fold-indicator.mod-active svg {
+	transform: rotate(0deg);
+}
+
+.shortcuts-setting-tab .setting-item-name:has(.fold-indicator) {
+	display: flex;
+	gap: var(--size-2-2);
+}
+
+.shortcuts-setting-tab
+	.setting-item-heading:has(.fold-indicator.mod-active)
+	~ .setting-item-heading {
+	margin-top: 0;
+}
+
+.theme-dark
+	.shortcuts-setting-tab
+	.special-container
+	.special-combo
+	span.mod-active {
 	color: var(--icon-color-active);
 	opacity: 100%;
 
@@ -146,7 +173,11 @@ If your plugin does not need CSS, delete this file.
 	--icon-stroke: 2px;
 }
 
-.theme-light .shortcuts-setting-tab .special-container .special-combo span.mod-active {
+.theme-light
+	.shortcuts-setting-tab
+	.special-container
+	.special-combo
+	span.mod-active {
 	color: var(--text-error);
 	opacity: 100%;
 
@@ -163,10 +194,47 @@ If your plugin does not need CSS, delete this file.
 }
 
 .shortcuts-status-item.mod-active .clickable-icon {
-	color: var(--icon-color-active)
+	color: var(--icon-color-active);
 }
 
 .shortcuts-status-item .clickable-icon {
 	padding: 0;
 	--icon-size: 14px;
+}
+
+.shortcuts-tooltip {
+	min-width: fit-content;
+	min-height: fit-content;
+	height: fit-content !important;
+}
+
+.shortcuts-hotkey-label {
+	padding-top: var(--size-2-1);
+	height: fit-content;
+	min-height: 12px;
+	font-size: var(--font-ui-small);
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	margin-top: var(--size-2-2);
+}
+
+.shortcuts-hotkey-label-icon {
+	--icon-size: 12px;
+	margin-right: var(--size-2-1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.shortcuts-hotkey-label-separator {
+	opacity: 90%;
+}
+
+.shortcuts-hotkey-label-item {
+	padding: 1px;
+	border-radius: var(--radius-s);
+	opacity: 90%;
+	text-transform: capitalize;
+	font-weight: var(--font-semibold);
 }

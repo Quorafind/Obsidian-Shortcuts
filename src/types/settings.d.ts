@@ -6,4 +6,5 @@ interface KeySequenceSettings {
 	showShortcutActivatedNotice: boolean;
 	keyboardLayout: string;
 	sequences: KeySequenceScope[];
+	autoShortcutMode: boolean;
 }

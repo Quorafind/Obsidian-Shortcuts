@@ -2,7 +2,7 @@ import { App, Modifier } from "obsidian";
 
 type Action = (app: App) => void;
 type CommandId = string;
-type ActionType = 'FUNC' | 'ID';
+type ActionType = 'FUNC' | 'ID' | "ARIA";
 type ModifierKey = Modifier;
 
 interface KeySequenceConfig {
@@ -11,10 +11,11 @@ interface KeySequenceConfig {
 	action: Action | CommandId;
 	id: string;
 	actionType: ActionType;
+	hide?: boolean;
 	timeout?: number;
 }
 
-type AvailableScope = 'General' | 'Canvas' | 'Daily notes' | 'Graph' | 'Editor';
+type AvailableScope = 'General' | 'Canvas' | 'Daily notes' | 'Graph' | 'Editor' | "UI";
 
 interface KeySequenceScope {
 	scope: AvailableScope;
