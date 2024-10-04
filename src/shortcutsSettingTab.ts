@@ -61,7 +61,6 @@ interface CapturedKey {
 
 const modifierKeys = [16, 17, 18, 91, 93];
 
-
 export class ShortcutsSettingTab extends PluginSettingTab {
 	plugin: ShortcutsPlugin;
 	private commandId: string | null = null;
@@ -267,7 +266,6 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			cls: "hotkey-list-container",
 		});
 	}
-
 
 	updateSearchQuery(query: string): void {
 		this.searchQuery = query;
@@ -507,7 +505,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			);
 		}
 
-		return filteredConfigsTemp;
+		return filteredConfigsTemp.filter((i) => !i.hide);
 	}
 
 	createShortcutSetting(
@@ -559,7 +557,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 				cls: "setting-hotkey",
 			});
 			hotkeySpan.setText(this.formatSequence(config.sequence));
-			
+
 			const deleteButton = hotkeySpan.createSpan(
 				{
 					cls: "setting-hotkey-icon setting-delete-hotkey",
