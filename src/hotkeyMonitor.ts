@@ -135,13 +135,11 @@ export class HotkeyMonitor {
 		}
 
 		this.resetSequenceTimer();
-		event.preventDefault();
-		event.stopPropagation();
 
 		const key = this.getKeyString(event);
 		if (key) {
 			this.updateCurrentSequence(key);
-			this.checkAndExecuteShortcut();
+			this.checkAndExecuteShortcut(event);
 		}
 	}
 
@@ -263,7 +261,7 @@ export class HotkeyMonitor {
 		if (!event.metaKey) this.pressedModifiers.delete("meta");
 	}
 
-	private checkAndExecuteShortcut(): void {
+	private checkAndExecuteShortcut(event: KeyboardEvent): void {
 		const sequenceString = this.formatSequence(this.currentSequence);
 		const matchedShortcut = this.shortcuts.find((shortcut) => {
 			return this.formatSequence(shortcut.sequence) === sequenceString;
@@ -278,8 +276,19 @@ export class HotkeyMonitor {
 		this.updateMessage(sequenceString, possibleMatches.length);
 
 		if (matchedShortcut) {
+			event.preventDefault();
+			event.stopPropagation();
 			this.executeAction(matchedShortcut);
 			this.resetSequence();
+		} else if (
+			this.plugin.settings.autoShortcutMode &&
+			this.hotkeyMode &&
+			possibleMatches.length === 0
+		) {
+			this.resetSequence();
+			this.cancelShortcuts();
+			this.notice?.hide();
+			this.notice = new Notice("No shortcut found for " + sequenceString);
 		}
 	}
 
