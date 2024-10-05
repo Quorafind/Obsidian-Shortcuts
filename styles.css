@@ -124,6 +124,7 @@ If your plugin does not need CSS, delete this file.
 	justify-content: center;
 	font-size: var(--font-ui-medium);
 	font-weight: var(--font-semibold);
+	color: var(--interactive-accent);
 
 	gap: var(--size-2-1);
 }
@@ -166,7 +167,7 @@ If your plugin does not need CSS, delete this file.
 	.special-container
 	.special-combo
 	span.mod-active {
-	color: var(--icon-color-active);
+	color: var(--interactive-accent);
 	opacity: 100%;
 
 	font-weight: var(--font-extrabold);

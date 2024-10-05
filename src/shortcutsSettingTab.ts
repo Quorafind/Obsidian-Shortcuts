@@ -68,7 +68,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 	private searchComponent: SearchComponent;
 	private filterStatus: "all" | "unassigned" | "assigned" = "all";
 	private searchQuery: string = "";
-	private isCapturing: boolean = false;
+	isCapturing: boolean = false;
 	private capturedKeys: Set<number> = new Set();
 	private lastKeyDownTime: number = 0;
 	private filterContainer: HTMLElement | null = null;
@@ -411,38 +411,44 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			}
 		);
 
-		this.konamiListener = new Component();
+		this.plugin.clearAllListeners();
+		this.plugin.konamiListener = new Component();
 
-		this.konamiListener.registerDomEvent(document, "keydown", (event) => {
-			if (this.isCapturing) return;
+		this.plugin.konamiListener.registerDomEvent(
+			document,
+			"keydown",
+			(event) => {
+				if (this.isCapturing) return;
 
-			if (
-				event.key.toLowerCase() ===
-				konamiCode[konamiIndex].toLowerCase()
-			) {
-				this.highlightKey(comboEl, konamiIndex);
-				konamiIndex++;
-				if (konamiIndex === konamiCode.length) {
-					iconEl.toggleClass("mod-active", true);
-					this.triggerConfetti();
-					setTimeout(() => {
-						window.open(
-							"https://github.com/Quorafind/Obsidian-Shortcuts/wiki/Donate",
-							"_blank"
-						);
-					}, 400);
+				if (
+					event.key.toLowerCase() ===
+					konamiCode[konamiIndex].toLowerCase()
+				) {
+					this.highlightKey(comboEl, konamiIndex);
+					konamiIndex++;
+					if (konamiIndex === konamiCode.length) {
+						iconEl.toggleClass("mod-active", true);
+						this.triggerConfetti();
+						setTimeout(() => {
+							window.open(
+								"https://github.com/Quorafind/Obsidian-Shortcuts/wiki/Donate",
+								"_blank"
+							);
+						}, 400);
 
-					setTimeout(() => {
-						this.resetKonamiHighlight(comboEl);
-						iconEl.toggleClass("mod-active", false);
-					}, 1000);
+						setTimeout(() => {
+							this.resetKonamiHighlight(comboEl);
+							iconEl.toggleClass("mod-active", false);
+						}, 1000);
+						konamiIndex = 0;
+					}
+				} else {
+					this.resetKonamiHighlight(comboEl);
 					konamiIndex = 0;
 				}
-			} else {
-				this.resetKonamiHighlight(comboEl);
-				konamiIndex = 0;
 			}
-		});
+		);
+		this.plugin.addChild(this.plugin.konamiListener);
 	}
 
 	createKonamiIcons(comboEl: HTMLElement, konamiCode: string[]): void {

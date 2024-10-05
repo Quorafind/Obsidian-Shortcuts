@@ -1,4 +1,11 @@
-import { Command, Editor, EditorPosition, Plugin, setTooltip } from "obsidian";
+import {
+	Command,
+	Component,
+	Editor,
+	EditorPosition,
+	Plugin,
+	setTooltip,
+} from "obsidian";
 import { KeySequenceConfig } from "./types/key";
 import { KeySequenceSettings } from "./types/settings";
 import { HotkeyMonitor } from "./hotkeyMonitor";
@@ -23,6 +30,8 @@ export default class ShortcutsPlugin extends Plugin {
 	settingTab: ShortcutsSettingTab;
 	hotkeyMonitor: HotkeyMonitor;
 	tooltipObserver: TooltipObserver;
+
+	konamiListener: Component;
 
 	capturing: boolean = false;
 
@@ -71,6 +80,11 @@ export default class ShortcutsPlugin extends Plugin {
 		this.hotkeyMonitor.handleKeyDown(event);
 	}
 
+	clearAllListeners() {
+		
+		this.konamiListener?.unload();
+	}
+
 	async saveSettings() {
 		await this.saveData(this.settings);
 		const allConfigs: KeySequenceConfig[] = this.settings.sequences.flatMap(
@@ -80,7 +94,8 @@ export default class ShortcutsPlugin extends Plugin {
 		this.hotkeyMonitor.updateTriggerKey();
 	}
 
-	onunload() {
+	unload() {
+		super.unload();
 		this.hotkeyMonitor?.unload();
 		this.tooltipObserver?.unload();
 		this.settingTab?.hide();
