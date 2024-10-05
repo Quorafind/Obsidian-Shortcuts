@@ -3,18 +3,14 @@ import ShortcutsPlugin from "./main";
 
 export class TooltipObserver extends Component {
 	private mutationObserver: MutationObserver;
-	private debouncedCheckAndModify: () => void;
 	private plugin: ShortcutsPlugin;
+
+	private tooltipsToModify = new Set<HTMLElement>();
 
 	constructor(plugin: ShortcutsPlugin) {
 		super();
 		this.mutationObserver = new MutationObserver(
 			this.handleMutations.bind(this)
-		);
-		this.debouncedCheckAndModify = debounce(
-			() => this.checkAndModifyAllTooltips(),
-			100, // 延迟100ms
-			true // 在延迟结束后调用
 		);
 		this.plugin = plugin;
 	}
@@ -29,15 +25,13 @@ export class TooltipObserver extends Component {
 			attributeFilter: ["class"],
 		});
 
-		// 注册一个定期检查的间隔
-		this.registerInterval(
-			window.setInterval(() => this.debouncedCheckAndModify(), 500)
-		);
 		this.registerDomEvent(document, "contextmenu", (event) => {
 			if (
 				event.target instanceof HTMLElement &&
 				event.target.closest("[aria-label].clickable-icon")
 			) {
+				event.preventDefault();
+				event.stopPropagation();
 				const menu = new Menu();
 				menu.addItem((item: MenuItem) => {
 					item.setTitle("Set hotkey").setIcon("scissors");
@@ -68,8 +62,6 @@ export class TooltipObserver extends Component {
 	}
 
 	private handleMutations(mutations: MutationRecord[]) {
-		const tooltipsToModify = new Set<HTMLElement>();
-
 		if (!mutations.find((m) => m.type === "childList")) {
 			return;
 		}
@@ -77,11 +69,27 @@ export class TooltipObserver extends Component {
 		mutations.forEach((mutation) => {
 			if (mutation.type === "childList") {
 				mutation.addedNodes.forEach((node) => {
-					if (node instanceof HTMLElement) {
-						const tooltips = node.findAll(".tooltip");
-						tooltips.forEach((tooltip) =>
-							tooltipsToModify.add(tooltip as HTMLElement)
-						);
+					if (
+						node instanceof HTMLElement &&
+						node.hasClass("tooltip")
+					) {
+						console.log(node);
+						this.tooltipsToModify.add(node);
+					}
+				});
+				mutation.removedNodes.forEach((node) => {
+					// Prevent removed tooltips from being modified
+					if (
+						node instanceof HTMLElement &&
+						node.hasClass("shortcuts-hotkey-label")
+					) {
+						const mutationTarget = mutation.target;
+						if (
+							mutationTarget instanceof HTMLElement &&
+							mutationTarget.hasClass("tooltip")
+						) {
+							this.tooltipsToModify.add(mutationTarget);
+						}
 					}
 				});
 			} else if (
@@ -93,29 +101,22 @@ export class TooltipObserver extends Component {
 					target instanceof HTMLElement &&
 					target.hasClass("tooltip")
 				) {
-					tooltipsToModify.add(target);
+					this.tooltipsToModify.add(target);
 				}
 			}
 		});
 
-		if (tooltipsToModify.size > 0) {
-			this.debouncedCheckAndModify();
+		if (this.tooltipsToModify.size > 0) {
+			this.checkAndModifyAllTooltips();
 		}
 	}
 
 	private checkAndModifyAllTooltips() {
-		const tooltips = document.querySelectorAll(".tooltip");
-		tooltips.forEach((tooltip) =>
-			this.modifyTooltipContent(tooltip as HTMLElement)
-		);
+		const tooltips = Array.from(this.tooltipsToModify);
+		tooltips.forEach((tooltip) => this.modifyTooltipContent(tooltip));
 	}
 
 	private modifyTooltipContent(tooltipElement: HTMLElement) {
-		// 检查 tooltip 是否已经被修改过
-		if (tooltipElement.dataset.modified) {
-			return;
-		}
-
 		const originalContent = tooltipElement.textContent || "";
 		tooltipElement.toggleClass("shortcuts-tooltip", true);
 
@@ -152,6 +153,6 @@ export class TooltipObserver extends Component {
 			}
 		}
 
-		tooltipElement.dataset.modified = "true";
+		this.tooltipsToModify.clear();
 	}
 }
