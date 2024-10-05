@@ -59,6 +59,12 @@ export class HotkeyMonitor {
 		this.statusBarItem = this.plugin.addStatusBarItem();
 
 		this.statusBarItem.toggleClass(["shortcuts-status-item"], true);
+		if (this.plugin.settings.autoShortcutMode) {
+			this.statusBarItem.toggleClass("mod-active", true);
+			setTooltip(this.statusBarItem, "Auto-shortcut mode enabled", {
+				placement: "top",
+			});
+		}
 		new ExtraButtonComponent(this.statusBarItem)
 			.setIcon("scissors")
 			.onClick(() => {
@@ -94,7 +100,9 @@ export class HotkeyMonitor {
 
 	cancelShortcuts(): void {
 		this.hotkeyMode = false;
-		this.statusBarItem.toggleClass("mod-active", false);
+		if (!this.plugin.settings.autoShortcutMode) {
+			this.statusBarItem.toggleClass("mod-active", false);
+		}
 		this.resetSequence();
 		this.notice?.hide();
 	}
