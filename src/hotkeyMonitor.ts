@@ -1,6 +1,7 @@
 import { KeySequenceConfig } from "./types/key";
 import {
 	App,
+	Component,
 	Editor,
 	EditorPosition,
 	ExtraButtonComponent,
@@ -11,6 +12,8 @@ import {
 } from "obsidian";
 import ShortcutsPlugin from "./main";
 import { AVAILABLE_CONFIGS, updateKeySequences } from "./keySequence";
+import { editorExt } from "./editor-ext";
+import { SelectionRange } from "@codemirror/state";
 
 const keycode = require("keycode");
 
@@ -18,7 +21,7 @@ type Action = (app: App) => void;
 type CommandId = string;
 type ActionType = "FUNC" | "ID";
 
-export class HotkeyMonitor {
+export class HotkeyMonitor extends Component {
 	private currentSequence: string[][] = [];
 	private sequenceTimer: NodeJS.Timeout | null = null;
 	private shortcuts: KeySequenceConfig[];
@@ -52,10 +55,12 @@ export class HotkeyMonitor {
 		app: App,
 		shortcuts: KeySequenceConfig[]
 	) {
+		super();
 		this.app = app;
 		this.shortcuts = shortcuts;
 
 		this.plugin = plugin;
+		this.plugin.registerEditorExtension(editorExt(app));
 		this.statusBarItem = this.plugin.addStatusBarItem();
 
 		this.statusBarItem.toggleClass(["shortcuts-status-item"], true);
@@ -74,6 +79,68 @@ export class HotkeyMonitor {
 			});
 
 		this.triggerKey = this.plugin.settings.shortcutModeTrigger || "esc";
+
+		this.registerEvent(
+			this.app.workspace.on(
+				"shortcuts:editor-focus-change",
+				({
+					focusing,
+					editor,
+					pos,
+				}: {
+					focusing: boolean;
+					editor: Editor;
+					pos: SelectionRange;
+				}) => {
+					if (
+						!this.plugin.settings.autoShortcutMode ||
+						(this.hotkeyMode && !focusing)
+					)
+						return;
+
+					this.lastActiveElementType = "editor";
+					this.editor = editor;
+					this.pos = editor.offsetToPos(pos.from);
+
+					if (!focusing) {
+						this.programaticallyEnterHotkeyMode();
+					} else {
+						this.cancelShortcuts();
+						this.statusBarItem.toggleClass("mod-active", false);
+					}
+				}
+			)
+		);
+
+		this.registerEvent(
+			this.app.workspace.on(
+				"shortcuts:input-focus-change",
+				({
+					focusing,
+					input,
+				}: {
+					focusing: boolean;
+					input: HTMLInputElement;
+				}) => {
+					if (
+						!this.plugin.settings.autoShortcutMode ||
+						(this.hotkeyMode && !focusing)
+					)
+						return;
+
+					this.lastActiveElementType = "input";
+					this.input = input;
+
+					if (!focusing) {
+						this.programaticallyEnterHotkeyMode();
+					} else {
+						this.cancelShortcuts();
+						this.statusBarItem.toggleClass("mod-active", false);
+						this.handleEscapeOnEditor();
+					}
+				}
+			)
+		);
 	}
 
 	unload(): void {
@@ -114,6 +181,7 @@ export class HotkeyMonitor {
 				this.triggerKey !== keycode(event.keyCode))
 		)
 			return;
+
 		if (
 			document.body.find(".modal-container") &&
 			(this.plugin.settings.shortcutModeTrigger === "esc" ||
@@ -162,6 +230,14 @@ export class HotkeyMonitor {
 		this.plugin.saveSettings();
 	}
 
+	private programaticallyEnterHotkeyMode(): void {
+		this.hotkeyMode = true;
+		this.notice = this.plugin.settings.showShortcutActivatedNotice
+			? new Notice("Starting shortcuts mode", 0)
+			: null;
+		this.statusBarItem.toggleClass("mod-active", true);
+	}
+
 	private enterHotkeyMode(event: KeyboardEvent): boolean {
 		this.hotkeyMode = true;
 		this.notice = this.plugin.settings.showShortcutActivatedNotice
@@ -176,6 +252,7 @@ export class HotkeyMonitor {
 				return true;
 			} else {
 				this.prepareForInput(event);
+				return true;
 			}
 		}
 
@@ -289,7 +366,7 @@ export class HotkeyMonitor {
 			this.executeAction(matchedShortcut);
 			this.resetSequence();
 		} else if (
-			this.plugin.settings.autoShortcutMode &&
+			// this.plugin.settings.autoShortcutMode &&
 			this.hotkeyMode &&
 			possibleMatches.length === 0
 		) {
@@ -399,6 +476,7 @@ export class HotkeyMonitor {
 		this.hotkeyMode = false;
 		e.preventDefault();
 		e.stopPropagation();
+
 		if (this.lastActiveElementType === "editor" && this.editor) {
 			this.editor.focus();
 			if (this.pos) {

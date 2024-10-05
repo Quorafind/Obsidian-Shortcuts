@@ -48,6 +48,15 @@ export default class ShortcutsPlugin extends Plugin {
 		});
 	}
 
+	unload() {
+		super.unload();
+		this.hotkeyMonitor?.unload();
+		this.tooltipObserver?.unload();
+		this.settingTab?.hide();
+		this.removeChild(this.hotkeyMonitor);
+		this.removeChild(this.tooltipObserver);
+	}
+
 	async initHotkeyMonitor() {
 		this.settings.sequences = updateKeySequences(
 			this.app,
@@ -58,6 +67,7 @@ export default class ShortcutsPlugin extends Plugin {
 			(s) => s.configs
 		);
 		this.hotkeyMonitor = new HotkeyMonitor(this, this.app, allConfigs);
+		this.addChild(this.hotkeyMonitor);
 
 		this.registerDomEvent(
 			document,
@@ -68,12 +78,31 @@ export default class ShortcutsPlugin extends Plugin {
 			this.hotkeyMonitor.handleKeyUp(event);
 		});
 
+		this.registerDomEvent(document, "focusin", (event: FocusEvent) => {
+			if (event.target instanceof HTMLInputElement) {
+				this.app.workspace.trigger("shortcuts:input-focus-change", {
+					focusing: true,
+					input: event.target as HTMLInputElement,
+				});
+			}
+		});
+
+		this.registerDomEvent(document, "focusout", (event: FocusEvent) => {
+			if (event.target instanceof HTMLInputElement) {
+				this.app.workspace.trigger("shortcuts:input-focus-change", {
+					focusing: false,
+					input: event.target as HTMLInputElement,
+				});
+			}
+		});
+
 		await this.saveSettings();
 	}
 
 	initTooltipObserver() {
 		this.tooltipObserver = new TooltipObserver(this);
 		this.tooltipObserver.onload();
+		this.addChild(this.tooltipObserver);
 	}
 
 	handleKeyDown(event: KeyboardEvent) {
@@ -81,7 +110,6 @@ export default class ShortcutsPlugin extends Plugin {
 	}
 
 	clearAllListeners() {
-		
 		this.konamiListener?.unload();
 	}
 
@@ -92,13 +120,6 @@ export default class ShortcutsPlugin extends Plugin {
 		);
 		this.hotkeyMonitor.updateShortcuts(allConfigs);
 		this.hotkeyMonitor.updateTriggerKey();
-	}
-
-	unload() {
-		super.unload();
-		this.hotkeyMonitor?.unload();
-		this.tooltipObserver?.unload();
-		this.settingTab?.hide();
 	}
 
 	async loadSettings() {

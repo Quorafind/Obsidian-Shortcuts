@@ -28,7 +28,7 @@ export class TooltipObserver extends Component {
 		this.registerDomEvent(document, "contextmenu", (event) => {
 			if (
 				event.target instanceof HTMLElement &&
-				event.target.closest("[aria-label].clickable-icon")
+				event.target.closest("[aria-label]")
 			) {
 				event.preventDefault();
 				event.stopPropagation();
@@ -73,7 +73,6 @@ export class TooltipObserver extends Component {
 						node instanceof HTMLElement &&
 						node.hasClass("tooltip")
 					) {
-						console.log(node);
 						this.tooltipsToModify.add(node);
 					}
 				});

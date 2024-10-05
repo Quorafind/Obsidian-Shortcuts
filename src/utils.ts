@@ -1,7 +1,7 @@
 import { KeySequenceConfig } from "./types/key";
 
 export function getAllSupportedShortcuts(): KeySequenceConfig[] {
-	const elementList = document.body.findAll("[aria-label].clickable-icon");
+	const elementList = document.body.findAll("[aria-label]");
 	const result: KeySequenceConfig[] = [];
 
 	elementList.forEach((element) => {
