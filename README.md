@@ -21,3 +21,5 @@ And it shows: `a then c+b then d` when you press `a`, `c+b`, `d` in sequence.
 
 - Designer: Johnny
 - Developer: Boninall
+
+- Credit for pixel art scissors: https://es.pixilart.com/art/rending-scissors-slash-51ea972a215c4f9
