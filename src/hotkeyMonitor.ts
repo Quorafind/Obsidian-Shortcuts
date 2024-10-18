@@ -14,6 +14,7 @@ import ShortcutsPlugin from "./main";
 import { AVAILABLE_CONFIGS, updateKeySequences } from "./keySequence";
 import { editorExt } from "./editor-ext";
 import { SelectionRange } from "@codemirror/state";
+import { TipsView } from "./tips-view";
 
 const keycode = require("keycode");
 
@@ -70,13 +71,25 @@ export class HotkeyMonitor extends Component {
 				placement: "top",
 			});
 		}
-		new ExtraButtonComponent(this.statusBarItem)
+		const statusBarButton = new ExtraButtonComponent(this.statusBarItem)
 			.setIcon("scissors")
 			.onClick(() => {
 				this.hotkeyMode = !this.hotkeyMode;
 				this.statusBarItem.toggleClass("mod-active", this.hotkeyMode);
-				this.cancelShortcuts();
+				if (this.hotkeyMode) {
+					this.programaticallyEnterHotkeyMode();
+				} else {
+					this.cancelShortcuts();
+				}
 			});
+
+		this.registerDomEvent(
+			statusBarButton.extraSettingsEl,
+			"contextmenu",
+			(e) => {
+				new TipsView(this.plugin).open();
+			}
+		);
 
 		this.triggerKey = this.plugin.settings.shortcutModeTrigger || "esc";
 
@@ -92,15 +105,15 @@ export class HotkeyMonitor extends Component {
 					editor: Editor;
 					pos: SelectionRange;
 				}) => {
+					this.lastActiveElementType = "editor";
+					this.editor = editor;
+					this.pos = editor.offsetToPos(pos.from);
+
 					if (
 						!this.plugin.settings.autoShortcutMode ||
 						(this.hotkeyMode && !focusing)
 					)
 						return;
-
-					this.lastActiveElementType = "editor";
-					this.editor = editor;
-					this.pos = editor.offsetToPos(pos.from);
 
 					if (!focusing) {
 						this.programaticallyEnterHotkeyMode();
@@ -122,14 +135,14 @@ export class HotkeyMonitor extends Component {
 					focusing: boolean;
 					input: HTMLInputElement;
 				}) => {
+					this.lastActiveElementType = "input";
+					this.input = input;
+
 					if (
 						!this.plugin.settings.autoShortcutMode ||
 						(this.hotkeyMode && !focusing)
 					)
 						return;
-
-					this.lastActiveElementType = "input";
-					this.input = input;
 
 					if (!focusing) {
 						this.programaticallyEnterHotkeyMode();
@@ -165,13 +178,17 @@ export class HotkeyMonitor extends Component {
 		} else return key;
 	}
 
-	cancelShortcuts(): void {
+	cancelShortcuts(event?: KeyboardEvent): void {
+		if (event) {
+			this.handleFocusMode(event);
+		}
 		this.hotkeyMode = false;
 		if (!this.plugin.settings.autoShortcutMode) {
 			this.statusBarItem.toggleClass("mod-active", false);
 		}
 		this.resetSequence();
 		this.notice?.hide();
+		this.notice = null;
 	}
 
 	handleKeyDown(event: KeyboardEvent): void {
@@ -195,7 +212,7 @@ export class HotkeyMonitor extends Component {
 			}
 		} else if (this.triggerKey === keycode(event.keyCode)) {
 			this.hotkeyMode
-				? this.cancelShortcuts()
+				? this.cancelShortcuts(event)
 				: this.enterHotkeyMode(event);
 			return;
 		}
@@ -204,6 +221,7 @@ export class HotkeyMonitor extends Component {
 			this.handleFocusMode(event);
 			this.statusBarItem.toggleClass("mod-active", false);
 			this.notice?.hide();
+			this.notice = null;
 		}
 
 		if (!this.hotkeyMode) {
@@ -230,18 +248,18 @@ export class HotkeyMonitor extends Component {
 		this.plugin.saveSettings();
 	}
 
-	private programaticallyEnterHotkeyMode(): void {
+	programaticallyEnterHotkeyMode(): void {
 		this.hotkeyMode = true;
 		this.notice = this.plugin.settings.showShortcutActivatedNotice
-			? new Notice("Starting shortcuts mode", 0)
+			? new Notice("Starting shortcuts mode", 3000)
 			: null;
 		this.statusBarItem.toggleClass("mod-active", true);
 	}
 
-	private enterHotkeyMode(event: KeyboardEvent): boolean {
+	enterHotkeyMode(event: KeyboardEvent): boolean {
 		this.hotkeyMode = true;
 		this.notice = this.plugin.settings.showShortcutActivatedNotice
-			? new Notice("Starting shortcuts mode", 0)
+			? new Notice("Starting shortcuts mode", 3000)
 			: null;
 		this.statusBarItem.toggleClass("mod-active", true);
 
@@ -267,7 +285,11 @@ export class HotkeyMonitor extends Component {
 		fragment.createDiv({
 			text: "Matches found: " + matches,
 		});
-		this.notice?.setMessage(fragment);
+		if (this.notice) {
+			this.notice?.setMessage(fragment);
+		} else {
+			this.notice = new Notice(fragment);
+		}
 	}
 
 	private getKeyString(event: KeyboardEvent): string {
@@ -421,7 +443,11 @@ export class HotkeyMonitor extends Component {
 			this.notice?.hide();
 			this.notice = new Notice(fragment);
 		} else {
-			this.notice?.setMessage(fragment);
+			if (this.notice) {
+				this.notice?.setMessage(fragment);
+			} else {
+				this.notice = new Notice(fragment);
+			}
 		}
 
 		this.resetSequence();
@@ -476,6 +502,8 @@ export class HotkeyMonitor extends Component {
 		this.hotkeyMode = false;
 		e.preventDefault();
 		e.stopPropagation();
+
+		console.log("focus mode");
 
 		if (this.lastActiveElementType === "editor" && this.editor) {
 			this.editor.focus();

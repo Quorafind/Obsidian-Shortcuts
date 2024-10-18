@@ -6,6 +6,8 @@ import {
 	Modal,
 	Platform,
 	PluginSettingTab,
+	prepareFuzzySearch,
+	prepareQuery,
 	prepareSimpleSearch,
 	SearchComponent,
 	setIcon,
@@ -105,6 +107,38 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.generateHotkeyList();
 		this.createHr(containerEl);
 		this.generateKonami(containerEl);
+	}
+
+	partDisplay(containerEl: HTMLElement): void {
+		containerEl.empty();
+		this.containerEl = containerEl;
+
+		containerEl.toggleClass("shortcuts-setting-tab", true);
+
+		this.plugin.hotkeyMonitor.updateConfig();
+
+		this.filteredConfigs = this.filterAndSearchConfigs(
+			this.plugin.settings.sequences[0].configs
+		);
+
+		// this.createGeneralSettings(containerEl);
+		this.createSearchAndFilterComponents(containerEl);
+		this.generateHotkeyList();
+	}
+
+	partHide(containerEl: HTMLElement): void {
+		this.plugin.capturing = false;
+		if (this.innerComponent) {
+			this.innerComponent.unload();
+		}
+		if (this.konamiListener) {
+			this.konamiListener.unload();
+		}
+		this.currentSequence = [];
+		this.commandId = null;
+		this.searchQuery = "";
+		this.filterStatus = "all";
+		containerEl.empty();
 	}
 
 	hide(): void {
@@ -308,6 +342,8 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		this.showedCommands = 0;
 
+		console.log(this.filteredConfigs, this.hotkeyContainer);
+
 		for (const header of HEADER_ARRAY) {
 			const scope = this.plugin.settings.sequences.find(
 				(scope: KeySequenceScope) => scope.scope === header
@@ -505,10 +541,19 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		}
 
 		if (this.searchQuery) {
-			const search = prepareSimpleSearch(this.searchQuery);
-			filteredConfigsTemp = filteredConfigsTemp.filter(
-				(config) => search(config.name) !== null
-			);
+			const preparedQuery = prepareQuery(this.searchQuery);
+			const search =
+				configs.length > 1000
+					? prepareSimpleSearch(this.searchQuery)
+					: prepareFuzzySearch(this.searchQuery);
+
+			filteredConfigsTemp = filteredConfigsTemp.filter((config) => {
+				if (configs.length > 1000) {
+					return search(config.name) !== null;
+				} else {
+					return search(config.name) !== null;
+				}
+			});
 		}
 
 		return filteredConfigsTemp.filter((i) => !i.hide);

@@ -151,6 +151,13 @@ export const AVAILABLE_CONFIGS: KeySequenceConfig[] = [
 		id: "file-explorer:sort-created-time-reverse",
 	},
 	{
+		sequence: [["x"]],
+		action: "shortcuts:open-settings",
+		actionType: "ID",
+		name: "Open settings",
+		id: "shortcuts:open-settings",
+	},
+	{
 		action: "workspace:split-vertical",
 		name: "Split right",
 		actionType: "ID",

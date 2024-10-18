@@ -55,10 +55,6 @@ If your plugin does not need CSS, delete this file.
 	margin-bottom: var(--size-4-4);
 }
 
-.shortcuts-setting-tab .setting-delete-hotkey .clickable-icon:hover {
-	color: var(--interactive-accent);
-}
-
 .shortcuts-setting-tab .settings-divider {
 	display: flex;
 	align-items: center;
@@ -238,4 +234,13 @@ If your plugin does not need CSS, delete this file.
 	opacity: 90%;
 	text-transform: capitalize;
 	font-weight: var(--font-semibold);
+}
+
+.modal-content.shortcuts-setting-tab {
+	overflow: hidden;
+}
+
+.hotkey-list-container {
+	overflow: scroll;
+	height: 500px;
 }
