@@ -12,15 +12,18 @@ import ShortcutsPlugin from "./main";
 export class TipsView extends Modal {
 	private cleanup: (() => void) | null = null;
 	private plugin: ShortcutsPlugin;
-
-	constructor(plugin: ShortcutsPlugin) {
+	private targetEl: HTMLElement;
+	constructor(plugin: ShortcutsPlugin, targetEl: HTMLElement) {
 		super(plugin.app);
 		this.plugin = plugin;
+		this.targetEl = targetEl;
 	}
 
 	onOpen(): void {
 		const { contentEl } = this;
+		this.containerEl.toggleClass("shortcuts-tips", true);
 		this.plugin.settingTab.partDisplay(contentEl);
+		this.show(this.targetEl);
 	}
 
 	onClose(): void {
@@ -41,16 +44,16 @@ export class TipsView extends Modal {
 			shift({ padding: 5 }),
 		];
 
-		this.cleanup = autoUpdate(targetEl, this.contentEl, () => {
-			computePosition(targetEl, this.contentEl, {
+		this.cleanup = autoUpdate(targetEl, this.modalEl, () => {
+			computePosition(targetEl, this.modalEl, {
 				placement: "top-start",
 				middleware: middleware,
 			}).then(({ x, y }: { x: number; y: number }) => {
-				Object.assign(this.contentEl.style, {
+				Object.assign(this.modalEl.style, {
 					left: `${x}px`,
-					top: `${y}px`,
-					position: 'fixed',
-					transform: 'none',
+					top: `${y - 10}px`, // Moved up by 10 pixels
+					position: "fixed",
+					transform: "none",
 				});
 			});
 		});

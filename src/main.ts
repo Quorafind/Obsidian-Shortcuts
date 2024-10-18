@@ -1,4 +1,12 @@
-import { Component, Editor, EditorPosition, Plugin, Scope } from "obsidian";
+import {
+	Component,
+	Editor,
+	EditorPosition,
+	MarkdownRenderer,
+	Notice,
+	Plugin,
+	Scope,
+} from "obsidian";
 import { KeySequenceConfig } from "./types/key";
 import { KeySequenceSettings } from "./types/settings";
 import { HotkeyMonitor } from "./hotkeyMonitor";
@@ -13,7 +21,6 @@ import { TipsView } from "./tips-view";
 
 export default class ShortcutsPlugin extends Plugin {
 	currentSequence: string[] = [];
-	hotkeyMode: boolean = false;
 
 	input: HTMLInputElement | HTMLTextAreaElement | null = null;
 	lastActiveElementType: "editor" | "input" = "editor";
@@ -46,6 +53,7 @@ export default class ShortcutsPlugin extends Plugin {
 			this.patchOriginalEscapeScope();
 			this.initTooltipObserver();
 			getAllSupportedShortcuts();
+			this.checkFirstLoaded();
 		});
 	}
 
@@ -69,16 +77,14 @@ export default class ShortcutsPlugin extends Plugin {
 			this.originalEscapeFunction = scope.keys[originalEscapeIndex].func;
 
 			const patchFunction = (evt: KeyboardEvent, ctx: any) => {
-				if (this.hotkeyMode) {
-					this.hotkeyMonitor.cancelShortcuts();
-				} else {
-					if (
-						evt.target instanceof HTMLInputElement ||
-						evt.target instanceof HTMLTextAreaElement
-					) {
-						evt.target.blur();
-						return;
-					}
+				console.log("patchFunction", this.hotkeyMonitor.hotkeyMode);
+
+				if (
+					evt.target instanceof HTMLInputElement ||
+					evt.target instanceof HTMLTextAreaElement
+				) {
+					evt.target.blur();
+					return;
 				}
 			};
 
@@ -117,6 +123,16 @@ export default class ShortcutsPlugin extends Plugin {
 				this.app.setting.openTabById("shortcuts");
 			},
 		});
+
+		this.addCommand({
+			id: "reload-first-loaded-tips",
+			name: "Reload first loaded tips",
+			callback: () => {
+				this.settings.firstLoaded = true;
+				this.saveSettings();
+				this.checkFirstLoaded();
+			},
+		});
 	}
 
 	async initHotkeyMonitor() {
@@ -141,7 +157,10 @@ export default class ShortcutsPlugin extends Plugin {
 		});
 
 		this.registerDomEvent(document, "focusin", (event: FocusEvent) => {
-			if (event.target instanceof HTMLInputElement) {
+			if (
+				event.target instanceof HTMLInputElement ||
+				event.target instanceof HTMLTextAreaElement
+			) {
 				this.app.workspace.trigger("shortcuts:input-focus-change", {
 					focusing: true,
 					input: event.target as HTMLInputElement,
@@ -162,6 +181,32 @@ export default class ShortcutsPlugin extends Plugin {
 		});
 
 		await this.saveSettings();
+	}
+
+	checkFirstLoaded() {
+		if (!this.settings.firstLoaded) {
+			return;
+		}
+		this.settings.firstLoaded = false;
+		const fragment = new DocumentFragment();
+		const container = fragment.createDiv({
+			cls: "markdown-rendered",
+		});
+		MarkdownRenderer.render(
+			this.app,
+			` 
+Congratulations! 🎉 **Shortcuts plugin** has been successfully loaded for the first time.
+You can now **activate Shortcuts mode** at any time, but you might want to configure your desired shortcuts first.
+To get started, press the \`Escape\` key in the top-left corner of your keyboard. This should trigger a new notice, and the Status bar icon in the bottom-right will light up.
+Then, simply press \`X\` to navigate to the Shortcuts plugin settings page.
+Remember, you can always press \`Escape\` again to exit Shortcuts mode.`,
+			container,
+			"",
+			this
+		);
+
+		new Notice(fragment, 20000);
+		this.saveSettings();
 	}
 
 	initTooltipObserver() {

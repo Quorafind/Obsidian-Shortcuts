@@ -27,7 +27,7 @@ export class HotkeyMonitor extends Component {
 	private sequenceTimer: NodeJS.Timeout | null = null;
 	private shortcuts: KeySequenceConfig[];
 	private app: App;
-	private hotkeyMode: boolean = false;
+	hotkeyMode: boolean = false;
 	private lastActiveElementType: "editor" | "input" = "editor";
 	private input: HTMLInputElement | HTMLTextAreaElement | null = null;
 	private editor: Editor | null = null;
@@ -50,6 +50,10 @@ export class HotkeyMonitor extends Component {
 	private triggerKey: string;
 
 	private notice: Notice | null = null;
+
+	private matchesNotice: Notice | null = null;
+
+	private isEnteringHotkeyMode: boolean = false;
 
 	constructor(
 		plugin: ShortcutsPlugin,
@@ -87,13 +91,16 @@ export class HotkeyMonitor extends Component {
 			statusBarButton.extraSettingsEl,
 			"contextmenu",
 			(e) => {
-				new TipsView(this.plugin).open();
+				new TipsView(
+					this.plugin,
+					statusBarButton.extraSettingsEl
+				).open();
 			}
 		);
 
 		this.triggerKey = this.plugin.settings.shortcutModeTrigger || "esc";
 
-		this.registerEvent(
+		this.plugin.registerEvent(
 			this.app.workspace.on(
 				"shortcuts:editor-focus-change",
 				({
@@ -109,6 +116,10 @@ export class HotkeyMonitor extends Component {
 					this.editor = editor;
 					this.pos = editor.offsetToPos(pos.from);
 
+					if (focusing) {
+						this.cancelShortcuts();
+					}
+
 					if (
 						!this.plugin.settings.autoShortcutMode ||
 						(this.hotkeyMode && !focusing)
@@ -116,16 +127,19 @@ export class HotkeyMonitor extends Component {
 						return;
 
 					if (!focusing) {
+						this.isEnteringHotkeyMode = true;
 						this.programaticallyEnterHotkeyMode();
+						setTimeout(() => {
+							this.isEnteringHotkeyMode = false;
+						}, 0);
 					} else {
-						this.cancelShortcuts();
 						this.statusBarItem.toggleClass("mod-active", false);
 					}
 				}
 			)
 		);
 
-		this.registerEvent(
+		this.plugin.registerEvent(
 			this.app.workspace.on(
 				"shortcuts:input-focus-change",
 				({
@@ -138,6 +152,10 @@ export class HotkeyMonitor extends Component {
 					this.lastActiveElementType = "input";
 					this.input = input;
 
+					if (focusing) {
+						this.cancelShortcuts();
+					}
+
 					if (
 						!this.plugin.settings.autoShortcutMode ||
 						(this.hotkeyMode && !focusing)
@@ -145,9 +163,12 @@ export class HotkeyMonitor extends Component {
 						return;
 
 					if (!focusing) {
+						this.isEnteringHotkeyMode = true;
 						this.programaticallyEnterHotkeyMode();
+						setTimeout(() => {
+							this.isEnteringHotkeyMode = false;
+						}, 0);
 					} else {
-						this.cancelShortcuts();
 						this.statusBarItem.toggleClass("mod-active", false);
 						this.handleEscapeOnEditor();
 					}
@@ -179,23 +200,28 @@ export class HotkeyMonitor extends Component {
 	}
 
 	cancelShortcuts(event?: KeyboardEvent): void {
-		if (event) {
+		if (event && !document.body.find(".modal-container")) {
 			this.handleFocusMode(event);
 		}
 		this.hotkeyMode = false;
-		if (!this.plugin.settings.autoShortcutMode) {
-			this.statusBarItem.toggleClass("mod-active", false);
-		}
+		this.statusBarItem.toggleClass("mod-active", false);
 		this.resetSequence();
 		this.notice?.hide();
 		this.notice = null;
 	}
 
 	handleKeyDown(event: KeyboardEvent): void {
+		const currentKeyCode = keycode(event.keyCode);
+
+		if (this.isEnteringHotkeyMode) {
+			return;
+		}
+
 		if (
 			(this.plugin.capturing && !this.plugin.settings.autoShortcutMode) ||
 			(this.isInputOrEditor(event) &&
-				this.triggerKey !== keycode(event.keyCode))
+				!this.hotkeyMode &&
+				this.triggerKey !== currentKeyCode)
 		)
 			return;
 
@@ -206,11 +232,25 @@ export class HotkeyMonitor extends Component {
 		)
 			return;
 
-		if (this.plugin.settings.autoShortcutMode && !this.hotkeyMode) {
+		if (
+			this.plugin.settings.autoShortcutMode &&
+			this.hotkeyMode &&
+			event.key === this.triggerKey
+		) {
+			this.cancelShortcuts(event);
+			return;
+		}
+
+		if (
+			this.plugin.settings.autoShortcutMode &&
+			!this.hotkeyMode &&
+			event.key === this.triggerKey
+		) {
 			if (this.enterHotkeyMode(event)) {
 				return;
 			}
-		} else if (this.triggerKey === keycode(event.keyCode)) {
+		} else if (this.triggerKey === currentKeyCode) {
+			console.log("trigger key");
 			this.hotkeyMode
 				? this.cancelShortcuts(event)
 				: this.enterHotkeyMode(event);
@@ -277,7 +317,11 @@ export class HotkeyMonitor extends Component {
 		return false;
 	}
 
-	private updateMessage(message: string, matches: number): void {
+	private updateMessage(
+		message: string,
+		matches: number,
+		possibleMatches: KeySequenceConfig[]
+	): void {
 		const fragment = document.createDocumentFragment();
 		fragment.createDiv({
 			text: "Current sequence: " + this.convertToMacModifier(message),
@@ -285,10 +329,24 @@ export class HotkeyMonitor extends Component {
 		fragment.createDiv({
 			text: "Matches found: " + matches,
 		});
-		if (this.notice) {
-			this.notice?.setMessage(fragment);
+		const possibleMatchesEl = fragment.createDiv({
+			text: "Possible matches:",
+		});
+		possibleMatches.forEach((match) => {
+			const matchEl = possibleMatchesEl.createDiv();
+			matchEl.createSpan({
+				text: this.convertToMacModifier(match.sequence.join(" ")),
+				cls: "shortcut-key",
+			});
+			matchEl.createSpan({
+				text: ` - ${match.name}`,
+			});
+		});
+
+		if (!this.matchesNotice) {
+			this.matchesNotice = new Notice(fragment, 0);
 		} else {
-			this.notice = new Notice(fragment);
+			this.matchesNotice?.setMessage(fragment);
 		}
 	}
 
@@ -380,7 +438,11 @@ export class HotkeyMonitor extends Component {
 			);
 		});
 
-		this.updateMessage(sequenceString, possibleMatches.length);
+		this.updateMessage(
+			sequenceString,
+			possibleMatches.length,
+			possibleMatches
+		);
 
 		if (matchedShortcut) {
 			event.preventDefault();
@@ -395,7 +457,11 @@ export class HotkeyMonitor extends Component {
 			this.resetSequence();
 			this.cancelShortcuts();
 			this.notice?.hide();
-			this.notice = new Notice("No shortcut found for " + sequenceString);
+			this.matchesNotice?.hide();
+			this.matchesNotice = new Notice(
+				"No shortcut found for " + sequenceString,
+				5000
+			);
 		}
 	}
 
@@ -428,6 +494,9 @@ export class HotkeyMonitor extends Component {
 			}
 		}
 
+		setTimeout(() => {
+			this.notice?.hide();
+		}, 3000);
 		this.plugin.settings.showShortcutActivatedNotice &&
 			new Notice("Shortcut executed: " + config.name);
 		const fragment = document.createDocumentFragment();
@@ -439,16 +508,7 @@ export class HotkeyMonitor extends Component {
 			text: "Press Escape to exit shortcuts mode or continue typing to execute another shortcut.",
 		});
 
-		if (this.plugin.settings.autoShortcutMode) {
-			this.notice?.hide();
-			this.notice = new Notice(fragment);
-		} else {
-			if (this.notice) {
-				this.notice?.setMessage(fragment);
-			} else {
-				this.notice = new Notice(fragment);
-			}
-		}
+		new Notice(fragment, 5000);
 
 		this.resetSequence();
 		this.resetSequenceTimer();
@@ -503,14 +563,16 @@ export class HotkeyMonitor extends Component {
 		e.preventDefault();
 		e.stopPropagation();
 
-		console.log("focus mode");
-
 		if (this.lastActiveElementType === "editor" && this.editor) {
 			this.editor.focus();
 			if (this.pos) {
 				this.editor.setSelection(this.pos);
 			}
-		} else if (document.contains(this.input as Node)) {
+		} else if (
+			this.lastActiveElementType === "input" &&
+			this.input &&
+			document.body.contains(this.input)
+		) {
 			this.input?.focus();
 		}
 	}

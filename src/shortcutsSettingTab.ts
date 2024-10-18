@@ -54,6 +54,7 @@ export const DEFAULT_KEY_SEQUENCE_SETTINGS: KeySequenceSettings = {
 	showShortcutActivatedNotice: true,
 	keyboardLayout: "qwerty",
 	autoShortcutMode: true,
+	firstLoaded: true,
 };
 
 interface CapturedKey {
