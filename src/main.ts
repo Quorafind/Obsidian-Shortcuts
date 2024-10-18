@@ -169,7 +169,7 @@ export default class ShortcutsPlugin extends Plugin {
 			this.hotkeyMonitor.handleKeyUp(event);
 		});
 
-		this.registerDomEvent(document, "focusin", (event: FocusEvent) => {
+		this.registerDomEvent(document, "focus", (event: FocusEvent) => {
 			if (
 				event.target instanceof HTMLInputElement ||
 				event.target instanceof HTMLTextAreaElement
@@ -181,7 +181,7 @@ export default class ShortcutsPlugin extends Plugin {
 			}
 		});
 
-		this.registerDomEvent(document, "focusout", (event: FocusEvent) => {
+		this.registerDomEvent(document, "blur", (event: FocusEvent) => {
 			if (
 				event.target instanceof HTMLInputElement ||
 				event.target instanceof HTMLTextAreaElement

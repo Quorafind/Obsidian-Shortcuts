@@ -181,7 +181,7 @@ export class HotkeyMonitor extends Component {
 		this.lastActiveElementType = "input";
 		this.input = input;
 
-		if (this.plugin.modalOpened) return;
+		// if (this.plugin.modalOpened) return;
 
 		if (focusing) {
 			this.cancelShortcuts();
