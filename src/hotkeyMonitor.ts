@@ -512,7 +512,7 @@ export class HotkeyMonitor extends Component {
 			possibleMatches.length === 0
 		) {
 			this.resetSequence();
-			this.cancelShortcuts();
+			// this.cancelShortcuts();
 			this.notice?.hide();
 			this.matchesNotice?.hide();
 			this.matchesNotice = new Notice(
@@ -565,7 +565,8 @@ export class HotkeyMonitor extends Component {
 			text: "Press Escape to exit shortcuts mode or continue typing to execute another shortcut.",
 		});
 
-		new Notice(fragment, 5000);
+		this.plugin.settings.showShortcutActivatedNotice &&
+			new Notice(fragment, 5000);
 
 		this.resetSequence();
 		this.resetSequenceTimer();
