@@ -53,8 +53,6 @@ export class HotkeyMonitor extends Component {
 
 	private matchesNotice: Notice | null = null;
 
-	private isEnteringHotkeyMode: boolean = false;
-
 	constructor(
 		plugin: ShortcutsPlugin,
 		app: App,
@@ -127,11 +125,7 @@ export class HotkeyMonitor extends Component {
 						return;
 
 					if (!focusing) {
-						this.isEnteringHotkeyMode = true;
 						this.programaticallyEnterHotkeyMode();
-						setTimeout(() => {
-							this.isEnteringHotkeyMode = false;
-						}, 0);
 					} else {
 						this.statusBarItem.toggleClass("mod-active", false);
 					}
@@ -163,11 +157,7 @@ export class HotkeyMonitor extends Component {
 						return;
 
 					if (!focusing) {
-						this.isEnteringHotkeyMode = true;
 						this.programaticallyEnterHotkeyMode();
-						setTimeout(() => {
-							this.isEnteringHotkeyMode = false;
-						}, 0);
 					} else {
 						this.statusBarItem.toggleClass("mod-active", false);
 						this.handleEscapeOnEditor();
@@ -212,10 +202,6 @@ export class HotkeyMonitor extends Component {
 
 	handleKeyDown(event: KeyboardEvent): void {
 		const currentKeyCode = keycode(event.keyCode);
-
-		if (this.isEnteringHotkeyMode) {
-			return;
-		}
 
 		if (
 			(this.plugin.capturing && !this.plugin.settings.autoShortcutMode) ||

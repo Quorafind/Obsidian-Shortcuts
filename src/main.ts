@@ -17,7 +17,6 @@ import {
 import { updateKeySequences } from "./keySequence";
 import { TooltipObserver } from "./tooltip";
 import { getAllSupportedShortcuts } from "./utils";
-import { TipsView } from "./tips-view";
 
 export default class ShortcutsPlugin extends Plugin {
 	currentSequence: string[] = [];

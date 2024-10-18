@@ -7,7 +7,6 @@ import {
 	Platform,
 	PluginSettingTab,
 	prepareFuzzySearch,
-	prepareQuery,
 	prepareSimpleSearch,
 	SearchComponent,
 	setIcon,
@@ -540,20 +539,14 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 				(config) => config.sequence.length > 0
 			);
 		}
-
 		if (this.searchQuery) {
-			const preparedQuery = prepareQuery(this.searchQuery);
 			const search =
 				configs.length > 1000
 					? prepareSimpleSearch(this.searchQuery)
 					: prepareFuzzySearch(this.searchQuery);
 
 			filteredConfigsTemp = filteredConfigsTemp.filter((config) => {
-				if (configs.length > 1000) {
-					return search(config.name) !== null;
-				} else {
-					return search(config.name) !== null;
-				}
+				return search(config.name) !== null;
 			});
 		}
 
