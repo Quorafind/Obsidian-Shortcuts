@@ -59,21 +59,40 @@ export class HotkeyMonitor extends Component {
 		shortcuts: KeySequenceConfig[]
 	) {
 		super();
+		this.initializeProperties(plugin, app, shortcuts);
+		this.setupStatusBarItem();
+		this.setupEventListeners();
+	}
+
+	private initializeProperties(
+		plugin: ShortcutsPlugin,
+		app: App,
+		shortcuts: KeySequenceConfig[]
+	) {
 		this.app = app;
 		this.shortcuts = shortcuts;
-
 		this.plugin = plugin;
 		this.plugin.registerEditorExtension(editorExt(app));
-		this.statusBarItem = this.plugin.addStatusBarItem();
+		this.triggerKey = this.plugin.settings.shortcutModeTrigger || "esc";
+	}
 
+	private setupStatusBarItem() {
+		this.statusBarItem = this.plugin.addStatusBarItem();
 		this.statusBarItem.toggleClass(["shortcuts-status-item"], true);
+
 		if (this.plugin.settings.autoShortcutMode) {
 			this.statusBarItem.toggleClass("mod-active", true);
 			setTooltip(this.statusBarItem, "Auto-shortcut mode enabled", {
 				placement: "top",
 			});
 		}
-		const statusBarButton = new ExtraButtonComponent(this.statusBarItem)
+
+		const statusBarButton = this.createStatusBarButton();
+		this.setupStatusBarContextMenu(statusBarButton);
+	}
+
+	private createStatusBarButton(): ExtraButtonComponent {
+		return new ExtraButtonComponent(this.statusBarItem)
 			.setIcon("scissors")
 			.onClick(() => {
 				this.hotkeyMode = !this.hotkeyMode;
@@ -84,7 +103,9 @@ export class HotkeyMonitor extends Component {
 					this.cancelShortcuts();
 				}
 			});
+	}
 
+	private setupStatusBarContextMenu(statusBarButton: ExtraButtonComponent) {
 		this.registerDomEvent(
 			statusBarButton.extraSettingsEl,
 			"contextmenu",
@@ -95,76 +116,89 @@ export class HotkeyMonitor extends Component {
 				).open();
 			}
 		);
+	}
 
-		this.triggerKey = this.plugin.settings.shortcutModeTrigger || "esc";
+	private setupEventListeners() {
+		this.setupEditorFocusChangeListener();
+		this.setupInputFocusChangeListener();
+	}
 
+	private setupEditorFocusChangeListener() {
 		this.plugin.registerEvent(
 			this.app.workspace.on(
 				"shortcuts:editor-focus-change",
-				({
-					focusing,
-					editor,
-					pos,
-				}: {
-					focusing: boolean;
-					editor: Editor;
-					pos: SelectionRange;
-				}) => {
-					this.lastActiveElementType = "editor";
-					this.editor = editor;
-					this.pos = editor.offsetToPos(pos.from);
-
-					if (focusing) {
-						this.cancelShortcuts();
-					}
-
-					if (
-						!this.plugin.settings.autoShortcutMode ||
-						(this.hotkeyMode && !focusing)
-					)
-						return;
-
-					if (!focusing) {
-						this.programaticallyEnterHotkeyMode();
-					} else {
-						this.statusBarItem.toggleClass("mod-active", false);
-					}
-				}
+				this.handleEditorFocusChange.bind(this)
 			)
 		);
+	}
 
+	private setupInputFocusChangeListener() {
 		this.plugin.registerEvent(
 			this.app.workspace.on(
 				"shortcuts:input-focus-change",
-				({
-					focusing,
-					input,
-				}: {
-					focusing: boolean;
-					input: HTMLInputElement;
-				}) => {
-					this.lastActiveElementType = "input";
-					this.input = input;
-
-					if (focusing) {
-						this.cancelShortcuts();
-					}
-
-					if (
-						!this.plugin.settings.autoShortcutMode ||
-						(this.hotkeyMode && !focusing)
-					)
-						return;
-
-					if (!focusing) {
-						this.programaticallyEnterHotkeyMode();
-					} else {
-						this.statusBarItem.toggleClass("mod-active", false);
-						this.handleEscapeOnEditor();
-					}
-				}
+				this.handleInputFocusChange.bind(this)
 			)
 		);
+	}
+
+	private handleEditorFocusChange({
+		focusing,
+		editor,
+		pos,
+	}: {
+		focusing: boolean;
+		editor: Editor;
+		pos: SelectionRange;
+	}) {
+		this.lastActiveElementType = "editor";
+		this.editor = editor;
+		this.pos = editor.offsetToPos(pos.from);
+
+		if (focusing) {
+			this.cancelShortcuts();
+		}
+
+		if (
+			!this.plugin.settings.autoShortcutMode ||
+			(this.hotkeyMode && !focusing)
+		)
+			return;
+
+		if (!focusing) {
+			this.programaticallyEnterHotkeyMode();
+		} else {
+			this.statusBarItem.toggleClass("mod-active", false);
+		}
+	}
+
+	private handleInputFocusChange({
+		focusing,
+		input,
+	}: {
+		focusing: boolean;
+		input: HTMLInputElement;
+	}) {
+		this.lastActiveElementType = "input";
+		this.input = input;
+
+		if (this.plugin.modalOpened) return;
+
+		if (focusing) {
+			this.cancelShortcuts();
+		}
+
+		if (
+			!this.plugin.settings.autoShortcutMode ||
+			(this.hotkeyMode && !focusing)
+		)
+			return;
+
+		if (!focusing) {
+			this.programaticallyEnterHotkeyMode();
+		} else {
+			this.statusBarItem.toggleClass("mod-active", false);
+			this.handleEscapeOnEditor();
+		}
 	}
 
 	unload(): void {
@@ -177,6 +211,106 @@ export class HotkeyMonitor extends Component {
 		this.notice?.hide();
 		this.notice = null;
 		this.hotkeyMode = false;
+	}
+
+	handleKeyDown(event: KeyboardEvent): void {
+		const currentKeyCode = keycode(event.keyCode);
+
+		if (this.shouldIgnoreKeyDown(event, currentKeyCode)) return;
+		if (this.shouldIgnoreModalKeyDown()) return;
+		if (this.handleAutoShortcutMode(event)) return;
+		if (this.handleTriggerKey(event, currentKeyCode)) return;
+		if (this.handleFocusModeKey(event)) return;
+
+		if (!this.hotkeyMode) return;
+
+		if (this.plugin.modalOpened && this.triggerKey === currentKeyCode)
+			return;
+
+		this.processKeyInHotkeyMode(event);
+	}
+
+	private shouldIgnoreKeyDown(
+		event: KeyboardEvent,
+		currentKeyCode: string
+	): boolean {
+		return (
+			(this.plugin.capturing && !this.plugin.settings.autoShortcutMode) ||
+			(this.isInputOrEditor(event) &&
+				!this.hotkeyMode &&
+				this.triggerKey !== currentKeyCode)
+		);
+	}
+
+	private shouldIgnoreModalKeyDown(): boolean {
+		return (
+			document.body.find(".modal-container") &&
+			(this.plugin.settings.shortcutModeTrigger === "esc" ||
+				!this.plugin.settings.shortcutModeTrigger)
+		);
+	}
+
+	private handleAutoShortcutMode(event: KeyboardEvent): boolean {
+		if (
+			this.plugin.settings.autoShortcutMode &&
+			this.hotkeyMode &&
+			event.key === this.triggerKey
+		) {
+			this.cancelShortcuts(event);
+			return true;
+		}
+
+		if (
+			this.plugin.settings.autoShortcutMode &&
+			!this.hotkeyMode &&
+			event.key === this.triggerKey
+		) {
+			return this.enterHotkeyMode(event);
+		}
+
+		return false;
+	}
+
+	private handleTriggerKey(
+		event: KeyboardEvent,
+		currentKeyCode: string
+	): boolean {
+		if (
+			this.plugin.modalOpened &&
+			this.triggerKey === currentKeyCode &&
+			this.triggerKey === "esc"
+		) {
+			this.plugin.modalOpened = false;
+			return true;
+		}
+		if (this.triggerKey === currentKeyCode) {
+			this.hotkeyMode
+				? this.cancelShortcuts(event)
+				: this.enterHotkeyMode(event);
+			return true;
+		}
+		return false;
+	}
+
+	private handleFocusModeKey(event: KeyboardEvent): boolean {
+		if (event.key === "i" && this.currentSequence.length === 0) {
+			this.handleFocusMode(event);
+			this.statusBarItem.toggleClass("mod-active", false);
+			this.notice?.hide();
+			this.notice = null;
+			return true;
+		}
+		return false;
+	}
+
+	private processKeyInHotkeyMode(event: KeyboardEvent): void {
+		this.resetSequenceTimer();
+
+		const key = this.getKeyString(event);
+		if (key) {
+			this.updateCurrentSequence(key);
+			this.checkAndExecuteShortcut(event);
+		}
 	}
 
 	updateTriggerKey(): void {
@@ -198,69 +332,6 @@ export class HotkeyMonitor extends Component {
 		this.resetSequence();
 		this.notice?.hide();
 		this.notice = null;
-	}
-
-	handleKeyDown(event: KeyboardEvent): void {
-		const currentKeyCode = keycode(event.keyCode);
-
-		if (
-			(this.plugin.capturing && !this.plugin.settings.autoShortcutMode) ||
-			(this.isInputOrEditor(event) &&
-				!this.hotkeyMode &&
-				this.triggerKey !== currentKeyCode)
-		)
-			return;
-
-		if (
-			document.body.find(".modal-container") &&
-			(this.plugin.settings.shortcutModeTrigger === "esc" ||
-				!this.plugin.settings.shortcutModeTrigger)
-		)
-			return;
-
-		if (
-			this.plugin.settings.autoShortcutMode &&
-			this.hotkeyMode &&
-			event.key === this.triggerKey
-		) {
-			this.cancelShortcuts(event);
-			return;
-		}
-
-		if (
-			this.plugin.settings.autoShortcutMode &&
-			!this.hotkeyMode &&
-			event.key === this.triggerKey
-		) {
-			if (this.enterHotkeyMode(event)) {
-				return;
-			}
-		} else if (this.triggerKey === currentKeyCode) {
-			console.log("trigger key");
-			this.hotkeyMode
-				? this.cancelShortcuts(event)
-				: this.enterHotkeyMode(event);
-			return;
-		}
-
-		if (event.key === "i" && this.currentSequence.length === 0) {
-			this.handleFocusMode(event);
-			this.statusBarItem.toggleClass("mod-active", false);
-			this.notice?.hide();
-			this.notice = null;
-		}
-
-		if (!this.hotkeyMode) {
-			return;
-		}
-
-		this.resetSequenceTimer();
-
-		const key = this.getKeyString(event);
-		if (key) {
-			this.updateCurrentSequence(key);
-			this.checkAndExecuteShortcut(event);
-		}
 	}
 
 	updateConfig() {

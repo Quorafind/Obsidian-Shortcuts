@@ -5,7 +5,7 @@ import {
 	MarkdownRenderer,
 	Notice,
 	Plugin,
-	Scope,
+	Modal,
 } from "obsidian";
 import { KeySequenceConfig } from "./types/key";
 import { KeySequenceSettings } from "./types/settings";
@@ -17,6 +17,7 @@ import {
 import { updateKeySequences } from "./keySequence";
 import { TooltipObserver } from "./tooltip";
 import { getAllSupportedShortcuts } from "./utils";
+import { around } from "monkey-around";
 
 export default class ShortcutsPlugin extends Plugin {
 	currentSequence: string[] = [];
@@ -34,6 +35,7 @@ export default class ShortcutsPlugin extends Plugin {
 	konamiListener: Component;
 
 	capturing: boolean = false;
+	modalOpened: boolean = false;
 
 	private originalEscapeFunction:
 		| ((evt: KeyboardEvent, ctx: any) => void)
@@ -50,6 +52,7 @@ export default class ShortcutsPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(() => {
 			this.initHotkeyMonitor();
 			this.patchOriginalEscapeScope();
+			this.patchModalScope(this);
 			this.initTooltipObserver();
 			getAllSupportedShortcuts();
 			this.checkFirstLoaded();
@@ -76,8 +79,6 @@ export default class ShortcutsPlugin extends Plugin {
 			this.originalEscapeFunction = scope.keys[originalEscapeIndex].func;
 
 			const patchFunction = (evt: KeyboardEvent, ctx: any) => {
-				console.log("patchFunction", this.hotkeyMonitor.hotkeyMode);
-
 				if (
 					evt.target instanceof HTMLInputElement ||
 					evt.target instanceof HTMLTextAreaElement
@@ -109,6 +110,19 @@ export default class ShortcutsPlugin extends Plugin {
 			scope.register([], "Escape", this.originalEscapeFunction);
 			this.originalEscapeFunction = null;
 		}
+	}
+
+	patchModalScope(plugin: ShortcutsPlugin) {
+		this.register(
+			around(Modal.prototype, {
+				onOpen: (next) => {
+					return function (...args: any[]) {
+						plugin.modalOpened = true;
+						return next.apply(this, args);
+					};
+				},
+			})
+		);
 	}
 
 	registerCustomCommands() {

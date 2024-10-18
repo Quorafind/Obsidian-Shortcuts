@@ -342,8 +342,6 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		this.showedCommands = 0;
 
-		console.log(this.filteredConfigs, this.hotkeyContainer);
-
 		for (const header of HEADER_ARRAY) {
 			const scope = this.plugin.settings.sequences.find(
 				(scope: KeySequenceScope) => scope.scope === header
