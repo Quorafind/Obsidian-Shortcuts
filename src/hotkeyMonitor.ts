@@ -28,8 +28,8 @@ export class HotkeyMonitor extends Component {
 	private shortcuts: KeySequenceConfig[];
 	private app: App;
 	hotkeyMode: boolean = false;
-	private lastActiveElementType: "editor" | "input" = "editor";
-	private input: HTMLInputElement | HTMLTextAreaElement | null = null;
+	private lastActiveElementType: "editor" | "input" | "contenteditable" = "editor";
+	private input: HTMLInputElement | HTMLTextAreaElement | HTMLElement | null = null;
 	private editor: Editor | null = null;
 	private pos: EditorPosition | null = null;
 	private readonly COMBO_THRESHOLD = 200; // milliseconds
@@ -121,6 +121,7 @@ export class HotkeyMonitor extends Component {
 	private setupEventListeners() {
 		this.setupEditorFocusChangeListener();
 		this.setupInputFocusChangeListener();
+		this.setupContentEditableFocusChangeListener();
 	}
 
 	private setupEditorFocusChangeListener() {
@@ -137,6 +138,15 @@ export class HotkeyMonitor extends Component {
 			this.app.workspace.on(
 				"shortcuts:input-focus-change",
 				this.handleInputFocusChange.bind(this)
+			)
+		);
+	}
+
+	private setupContentEditableFocusChangeListener() {
+		this.plugin.registerEvent(
+			this.app.workspace.on(
+				"shortcuts:contenteditable-focus-change",
+				this.handleContentEditableFocusChange.bind(this)
 			)
 		);
 	}
@@ -181,7 +191,33 @@ export class HotkeyMonitor extends Component {
 		this.lastActiveElementType = "input";
 		this.input = input;
 
-		// if (this.plugin.modalOpened) return;
+		if (focusing) {
+			this.cancelShortcuts();
+		}
+
+		if (
+			!this.plugin.settings.autoShortcutMode ||
+			(this.hotkeyMode && !focusing)
+		)
+			return;
+
+		if (!focusing) {
+			this.programaticallyEnterHotkeyMode();
+		} else {
+			this.statusBarItem.toggleClass("mod-active", false);
+			this.handleEscapeOnEditor();
+		}
+	}
+
+	private handleContentEditableFocusChange({
+		focusing,
+		element,
+	}: {
+		focusing: boolean;
+		element: HTMLElement;
+	}) {
+		this.lastActiveElementType = "contenteditable";
+		this.input = element;
 
 		if (focusing) {
 			this.cancelShortcuts();
@@ -236,7 +272,7 @@ export class HotkeyMonitor extends Component {
 	): boolean {
 		return (
 			(this.plugin.capturing && !this.plugin.settings.autoShortcutMode) ||
-			(this.isInputOrEditor(event) &&
+			(this.isInputOrEditorOrContentEditable(event) &&
 				!this.hotkeyMode &&
 				this.triggerKey !== currentKeyCode)
 		);
@@ -360,7 +396,7 @@ export class HotkeyMonitor extends Component {
 			: null;
 		this.statusBarItem.toggleClass("mod-active", true);
 
-		if (this.isInputOrEditor(event)) {
+		if (this.isInputOrEditorOrContentEditable(event)) {
 			if (this.isTargetInCodeMirror(event)) {
 				this.handleEscapeOnEditor();
 
@@ -507,12 +543,10 @@ export class HotkeyMonitor extends Component {
 			this.executeAction(matchedShortcut);
 			this.resetSequence();
 		} else if (
-			// this.plugin.settings.autoShortcutMode &&
 			this.hotkeyMode &&
 			possibleMatches.length === 0
 		) {
 			this.resetSequence();
-			// this.cancelShortcuts();
 			this.notice?.hide();
 			this.matchesNotice?.hide();
 			this.matchesNotice = new Notice(
@@ -584,11 +618,12 @@ export class HotkeyMonitor extends Component {
 		this.sequenceTimer = setTimeout(() => this.resetSequence(), 5000);
 	}
 
-	private isInputOrEditor(e: KeyboardEvent): boolean {
+	private isInputOrEditorOrContentEditable(e: KeyboardEvent): boolean {
 		return (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
-			this.isTargetInCodeMirror(e)
+			this.isTargetInCodeMirror(e) ||
+			(e.target instanceof HTMLElement && e.target.isContentEditable)
 		);
 	}
 
@@ -610,8 +645,13 @@ export class HotkeyMonitor extends Component {
 
 	private prepareForInput(e: KeyboardEvent): void {
 		this.hotkeyMode = true;
-		this.lastActiveElementType = "input";
-		this.input = e.target as HTMLInputElement | HTMLTextAreaElement;
+		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+			this.lastActiveElementType = "input";
+			this.input = e.target;
+		} else if (e.target instanceof HTMLElement && e.target.isContentEditable) {
+			this.lastActiveElementType = "contenteditable";
+			this.input = e.target;
+		}
 	}
 
 	private handleFocusMode(e: KeyboardEvent): void {
@@ -627,7 +667,7 @@ export class HotkeyMonitor extends Component {
 				this.editor.setSelection(this.pos);
 			}
 		} else if (
-			this.lastActiveElementType === "input" &&
+			(this.lastActiveElementType === "input" || this.lastActiveElementType === "contenteditable") &&
 			this.input &&
 			document.body.contains(this.input)
 		) {

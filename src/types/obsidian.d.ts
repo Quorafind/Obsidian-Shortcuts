@@ -49,7 +49,23 @@ declare module "obsidian" {
 				input,
 			}: {
 				focusing: boolean;
-				input: HTMLInputElement;
+				input: HTMLInputElement | HTMLTextAreaElement;
+			}) => any,
+			ctx?: any
+		): EventRef;
+
+		/**
+		 * Triggered when the contenteditable focus changes.
+		 * @public
+		 */
+		on(
+			name: "shortcuts:contenteditable-focus-change",
+			callback: ({
+				focusing,
+				element,
+			}: {
+				focusing: boolean;
+				element: HTMLElement;
 			}) => any,
 			ctx?: any
 		): EventRef;

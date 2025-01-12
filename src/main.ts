@@ -147,7 +147,6 @@ export default class ShortcutsPlugin extends Plugin {
 			},
 		});
 	}
-
 	async initHotkeyMonitor() {
 		this.settings.sequences = updateKeySequences(
 			this.app,
@@ -172,26 +171,54 @@ export default class ShortcutsPlugin extends Plugin {
 		this.registerDomEvent(document, "focus", (event: FocusEvent) => {
 			if (
 				event.target instanceof HTMLInputElement ||
-				event.target instanceof HTMLTextAreaElement
+				event.target instanceof HTMLTextAreaElement ||
+				(event.target instanceof HTMLElement &&
+					event.target.isContentEditable)
 			) {
-				this.app.workspace.trigger("shortcuts:input-focus-change", {
-					focusing: true,
-					input: event.target as HTMLInputElement,
-				});
+				if (event.target instanceof HTMLElement) {
+					this.app.workspace.trigger(
+						"shortcuts:contenteditable-focus-change",
+						{
+							focusing: true,
+							element: event.target,
+						}
+					);
+				} else {
+					this.app.workspace.trigger("shortcuts:input-focus-change", {
+						focusing: true,
+						input: event.target as
+							| HTMLInputElement
+							| HTMLTextAreaElement,
+					});
+				}
 			}
-		});
+		}, true); // 添加 true 参数启用捕获阶段
 
 		this.registerDomEvent(document, "blur", (event: FocusEvent) => {
 			if (
 				event.target instanceof HTMLInputElement ||
-				event.target instanceof HTMLTextAreaElement
+				event.target instanceof HTMLTextAreaElement ||
+				(event.target instanceof HTMLElement &&
+					event.target.isContentEditable)
 			) {
-				this.app.workspace.trigger("shortcuts:input-focus-change", {
-					focusing: false,
-					input: event.target as HTMLInputElement,
-				});
+				if (event.target instanceof HTMLElement) {
+					this.app.workspace.trigger(
+						"shortcuts:contenteditable-focus-change",
+						{
+							focusing: false,
+							element: event.target,
+						}
+					);
+				} else {
+					this.app.workspace.trigger("shortcuts:input-focus-change", {
+						focusing: false,
+						input: event.target as
+							| HTMLInputElement
+							| HTMLTextAreaElement,
+					});
+				}
 			}
-		});
+		}, true); // 添加 true 参数启用捕获阶段
 
 		await this.saveSettings();
 	}
