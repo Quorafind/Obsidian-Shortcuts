@@ -109,7 +109,10 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.generateKonami(containerEl);
 	}
 
-	partDisplay(containerEl: HTMLElement): void {
+	partDisplay(
+		containerEl: HTMLElement,
+		filterStatus: "all" | "unassigned" | "assigned"
+	): void {
 		containerEl.empty();
 		this.containerEl = containerEl;
 
@@ -123,6 +126,10 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		// this.createGeneralSettings(containerEl);
 		this.createSearchAndFilterComponents(containerEl);
+		this.generateHotkeyList();
+
+		this.filterStatus = filterStatus;
+		this.updateFilterDisplay();
 		this.generateHotkeyList();
 	}
 

@@ -22,7 +22,7 @@ export class TipsView extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		this.containerEl.toggleClass("shortcuts-tips", true);
-		this.plugin.settingTab.partDisplay(contentEl);
+		this.plugin.settingTab.partDisplay(contentEl, "assigned");
 		this.show(this.targetEl);
 	}
 
