@@ -1,5 +1,14 @@
-import { App, Component, debounce, Menu, MenuItem, setIcon } from "obsidian";
+import {
+	App,
+	Component,
+	debounce,
+	Menu,
+	MenuItem,
+	setIcon,
+	View,
+} from "obsidian";
 import ShortcutsPlugin from "./main";
+import { around } from "monkey-around";
 
 export class TooltipObserver extends Component {
 	private mutationObserver: MutationObserver;
@@ -25,21 +34,24 @@ export class TooltipObserver extends Component {
 			attributeFilter: ["class"],
 		});
 
+		const plugin = this.plugin;
+
 		this.registerDomEvent(document, "contextmenu", (event) => {
 			if (
 				event.target instanceof HTMLElement &&
-				event.target.closest("[aria-label]")
+				event.target.closest("[aria-label]") &&
+				!event.target.closest(".workspace-tab-header")
 			) {
 				event.preventDefault();
 				event.stopPropagation();
 				const menu = new Menu();
 				menu.addItem((item: MenuItem) => {
-					item.setTitle("Set hotkey").setIcon("scissors");
+					item.setTitle("Set shortcut").setIcon("scissors");
 					item.onClick(() => {
 						// @ts-ignore
-						this.plugin.app.setting.open();
+						plugin.app.setting.open();
 						// @ts-ignore
-						this.plugin.app.setting.openTabById("shortcuts");
+						plugin.app.setting.openTabById("shortcuts");
 
 						if (
 							event.target instanceof HTMLElement &&

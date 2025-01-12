@@ -17,6 +17,7 @@ declare module "obsidian" {
 
 	interface View {
 		setSortOrder(order: string): void;
+		onTabMenu: any;
 	}
 
 	interface Workspace {

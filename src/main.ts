@@ -6,6 +6,8 @@ import {
 	Notice,
 	Plugin,
 	Modal,
+	View,
+	MenuItem,
 } from "obsidian";
 import { KeySequenceConfig } from "./types/key";
 import { KeySequenceSettings } from "./types/settings";
@@ -53,7 +55,7 @@ export default class ShortcutsPlugin extends Plugin {
 			this.initHotkeyMonitor();
 			this.patchOriginalEscapeScope();
 			this.patchModalScope(this);
-			this.initTooltipObserver();
+			this.initTooltipObserver(this);
 			getAllSupportedShortcuts();
 			this.checkFirstLoaded();
 		});
@@ -168,57 +170,73 @@ export default class ShortcutsPlugin extends Plugin {
 			this.hotkeyMonitor.handleKeyUp(event);
 		});
 
-		this.registerDomEvent(document, "focus", (event: FocusEvent) => {
-			if (
-				event.target instanceof HTMLInputElement ||
-				event.target instanceof HTMLTextAreaElement ||
-				(event.target instanceof HTMLElement &&
-					event.target.isContentEditable)
-			) {
-				if (event.target instanceof HTMLElement) {
-					this.app.workspace.trigger(
-						"shortcuts:contenteditable-focus-change",
-						{
-							focusing: true,
-							element: event.target,
-						}
-					);
-				} else {
-					this.app.workspace.trigger("shortcuts:input-focus-change", {
-						focusing: true,
-						input: event.target as
-							| HTMLInputElement
-							| HTMLTextAreaElement,
-					});
+		this.registerDomEvent(
+			document,
+			"focus",
+			(event: FocusEvent) => {
+				if (
+					event.target instanceof HTMLInputElement ||
+					event.target instanceof HTMLTextAreaElement ||
+					(event.target instanceof HTMLElement &&
+						event.target.isContentEditable)
+				) {
+					if (event.target instanceof HTMLElement) {
+						this.app.workspace.trigger(
+							"shortcuts:contenteditable-focus-change",
+							{
+								focusing: true,
+								element: event.target,
+							}
+						);
+					} else {
+						this.app.workspace.trigger(
+							"shortcuts:input-focus-change",
+							{
+								focusing: true,
+								input: event.target as
+									| HTMLInputElement
+									| HTMLTextAreaElement,
+							}
+						);
+					}
 				}
-			}
-		}, true); // 添加 true 参数启用捕获阶段
+			},
+			true
+		);
 
-		this.registerDomEvent(document, "blur", (event: FocusEvent) => {
-			if (
-				event.target instanceof HTMLInputElement ||
-				event.target instanceof HTMLTextAreaElement ||
-				(event.target instanceof HTMLElement &&
-					event.target.isContentEditable)
-			) {
-				if (event.target instanceof HTMLElement) {
-					this.app.workspace.trigger(
-						"shortcuts:contenteditable-focus-change",
-						{
-							focusing: false,
-							element: event.target,
-						}
-					);
-				} else {
-					this.app.workspace.trigger("shortcuts:input-focus-change", {
-						focusing: false,
-						input: event.target as
-							| HTMLInputElement
-							| HTMLTextAreaElement,
-					});
+		this.registerDomEvent(
+			document,
+			"blur",
+			(event: FocusEvent) => {
+				if (
+					event.target instanceof HTMLInputElement ||
+					event.target instanceof HTMLTextAreaElement ||
+					(event.target instanceof HTMLElement &&
+						event.target.isContentEditable)
+				) {
+					if (event.target instanceof HTMLElement) {
+						this.app.workspace.trigger(
+							"shortcuts:contenteditable-focus-change",
+							{
+								focusing: false,
+								element: event.target,
+							}
+						);
+					} else {
+						this.app.workspace.trigger(
+							"shortcuts:input-focus-change",
+							{
+								focusing: false,
+								input: event.target as
+									| HTMLInputElement
+									| HTMLTextAreaElement,
+							}
+						);
+					}
 				}
-			}
-		}, true); // 添加 true 参数启用捕获阶段
+			},
+			true
+		);
 
 		await this.saveSettings();
 	}
@@ -249,10 +267,30 @@ Remember, you can always press \`Escape\` again to exit Shortcuts mode.`,
 		this.saveSettings();
 	}
 
-	initTooltipObserver() {
+	initTooltipObserver(plugin: ShortcutsPlugin) {
 		this.tooltipObserver = new TooltipObserver(this);
 		this.tooltipObserver.onload();
 		this.addChild(this.tooltipObserver);
+
+		this.register(
+			around(View.prototype, {
+				onTabMenu: (next) => {
+					return function (...args: any[]) {
+						const menu = args[0];
+						menu.addItem((item: MenuItem) => {
+							item.setTitle("Set shortcut").setIcon("scissors");
+							item.onClick(() => {
+								// @ts-ignore
+								plugin.app.setting.open();
+								// @ts-ignore
+								plugin.app.setting.openTabById("shortcuts");
+							});
+						});
+						return next.apply(this, args);
+					};
+				},
+			})
+		);
 	}
 
 	handleKeyDown(event: KeyboardEvent) {
