@@ -14,6 +14,13 @@ If your plugin does not need CSS, delete this file.
 	padding-right: 8px;
 }
 
+.theme-dark
+	.shortcuts-setting-tab
+	.setting-hotkey-icon.setting-delete-hotkey:hover
+	.clickable-icon.extra-setting-button {
+	color: white !important;
+}
+
 .shortcuts-setting-tab .setting-hotkey {
 	max-width: 300px;
 	word-wrap: break-word;
