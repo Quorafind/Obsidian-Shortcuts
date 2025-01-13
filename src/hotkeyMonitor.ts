@@ -28,8 +28,10 @@ export class HotkeyMonitor extends Component {
 	private shortcuts: KeySequenceConfig[];
 	private app: App;
 	hotkeyMode: boolean = false;
-	private lastActiveElementType: "editor" | "input" | "contenteditable" = "editor";
-	private input: HTMLInputElement | HTMLTextAreaElement | HTMLElement | null = null;
+	private lastActiveElementType: "editor" | "input" | "contenteditable" =
+		"editor";
+	private input: HTMLInputElement | HTMLTextAreaElement | HTMLElement | null =
+		null;
 	private editor: Editor | null = null;
 	private pos: EditorPosition | null = null;
 	private readonly COMBO_THRESHOLD = 200; // milliseconds
@@ -163,6 +165,8 @@ export class HotkeyMonitor extends Component {
 		this.lastActiveElementType = "editor";
 		this.editor = editor;
 		this.pos = editor.offsetToPos(pos.from);
+
+		console.log(focusing, this.hotkeyMode);
 
 		if (focusing) {
 			this.cancelShortcuts();
@@ -542,10 +546,7 @@ export class HotkeyMonitor extends Component {
 			event.stopPropagation();
 			this.executeAction(matchedShortcut);
 			this.resetSequence();
-		} else if (
-			this.hotkeyMode &&
-			possibleMatches.length === 0
-		) {
+		} else if (this.hotkeyMode && possibleMatches.length === 0) {
 			this.resetSequence();
 			this.notice?.hide();
 			this.matchesNotice?.hide();
@@ -645,10 +646,16 @@ export class HotkeyMonitor extends Component {
 
 	private prepareForInput(e: KeyboardEvent): void {
 		this.hotkeyMode = true;
-		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+		if (
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement
+		) {
 			this.lastActiveElementType = "input";
 			this.input = e.target;
-		} else if (e.target instanceof HTMLElement && e.target.isContentEditable) {
+		} else if (
+			e.target instanceof HTMLElement &&
+			e.target.isContentEditable
+		) {
 			this.lastActiveElementType = "contenteditable";
 			this.input = e.target;
 		}
@@ -667,7 +674,8 @@ export class HotkeyMonitor extends Component {
 				this.editor.setSelection(this.pos);
 			}
 		} else if (
-			(this.lastActiveElementType === "input" || this.lastActiveElementType === "contenteditable") &&
+			(this.lastActiveElementType === "input" ||
+				this.lastActiveElementType === "contenteditable") &&
 			this.input &&
 			document.body.contains(this.input)
 		) {

@@ -169,11 +169,15 @@ export default class ShortcutsPlugin extends Plugin {
 		this.registerDomEvent(document, "keyup", (event: KeyboardEvent) => {
 			this.hotkeyMonitor.handleKeyUp(event);
 		});
-
 		this.registerDomEvent(
 			document,
 			"focus",
 			(event: FocusEvent) => {
+				const target = event.target as HTMLElement;
+				if (target.closest('.cm-contentContainer')) {
+					return;
+				}
+
 				if (
 					event.target instanceof HTMLInputElement ||
 					event.target instanceof HTMLTextAreaElement ||
@@ -208,6 +212,11 @@ export default class ShortcutsPlugin extends Plugin {
 			document,
 			"blur",
 			(event: FocusEvent) => {
+				const target = event.target as HTMLElement;
+				if (target.closest('.cm-contentContainer')) {
+					return;
+				}
+
 				if (
 					event.target instanceof HTMLInputElement ||
 					event.target instanceof HTMLTextAreaElement ||
