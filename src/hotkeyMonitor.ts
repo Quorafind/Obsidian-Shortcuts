@@ -166,8 +166,6 @@ export class HotkeyMonitor extends Component {
 		this.editor = editor;
 		this.pos = editor.offsetToPos(pos.from);
 
-		console.log(focusing, this.hotkeyMode);
-
 		if (focusing) {
 			this.cancelShortcuts();
 		}
@@ -225,6 +223,7 @@ export class HotkeyMonitor extends Component {
 
 		if (focusing) {
 			this.cancelShortcuts();
+			return;
 		}
 
 		if (
@@ -256,6 +255,13 @@ export class HotkeyMonitor extends Component {
 	handleKeyDown(event: KeyboardEvent): void {
 		const currentKeyCode = keycode(event.keyCode);
 
+		if (this.isTargetInInputOrContentEditable(event)) {
+			this.app.workspace.trigger("shortcuts:input-focus-change", {
+				focusing: true,
+				input: this.input,
+			});
+			return;
+		}
 		if (this.shouldIgnoreKeyDown(event, currentKeyCode)) return;
 		if (this.shouldIgnoreModalKeyDown()) return;
 		if (this.handleAutoShortcutMode(event)) return;
@@ -268,6 +274,16 @@ export class HotkeyMonitor extends Component {
 			return;
 
 		this.processKeyInHotkeyMode(event);
+	}
+
+	private shouldIgnoreKeyDownInInputOrContentEditable(
+		event: KeyboardEvent,
+		currentKeyCode: string
+	): boolean {
+		return (
+			this.isInputOrEditorOrContentEditable(event) &&
+			this.triggerKey !== currentKeyCode
+		);
 	}
 
 	private shouldIgnoreKeyDown(
@@ -624,6 +640,14 @@ export class HotkeyMonitor extends Component {
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
 			this.isTargetInCodeMirror(e) ||
+			(e.target instanceof HTMLElement && e.target.isContentEditable)
+		);
+	}
+
+	private isTargetInInputOrContentEditable(e: KeyboardEvent): boolean {
+		return (
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement ||
 			(e.target instanceof HTMLElement && e.target.isContentEditable)
 		);
 	}

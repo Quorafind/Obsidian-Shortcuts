@@ -8,6 +8,8 @@ import {
 	Modal,
 	View,
 	MenuItem,
+	Keymap,
+	setIcon,
 } from "obsidian";
 import { KeySequenceConfig } from "./types/key";
 import { KeySequenceSettings } from "./types/settings";
@@ -20,9 +22,11 @@ import { updateKeySequences } from "./keySequence";
 import { TooltipObserver } from "./tooltip";
 import { getAllSupportedShortcuts } from "./utils";
 import { around } from "monkey-around";
+import ElementMonitor from "./surfing-key/element-monitor";
 
 export default class ShortcutsPlugin extends Plugin {
 	currentSequence: string[] = [];
+	documentMonitor: ElementMonitor | null = null;
 
 	input: HTMLInputElement | HTMLTextAreaElement | null = null;
 	lastActiveElementType: "editor" | "input" = "editor";
@@ -58,6 +62,7 @@ export default class ShortcutsPlugin extends Plugin {
 			this.initTooltipObserver(this);
 			getAllSupportedShortcuts();
 			this.checkFirstLoaded();
+			this.patchSettingTab();
 		});
 	}
 
@@ -148,6 +153,23 @@ export default class ShortcutsPlugin extends Plugin {
 				this.checkFirstLoaded();
 			},
 		});
+
+		this.addCommand({
+			id: "surfing-key",
+			name: "Surfing Key",
+			callback: () => {
+				if (!this.documentMonitor) {
+					this.documentMonitor = new ElementMonitor(
+						activeDocument,
+						() => {
+							this.documentMonitor = null;
+						},
+						this
+					);
+					this.documentMonitor.init();
+				}
+			},
+		});
 	}
 	async initHotkeyMonitor() {
 		this.settings.sequences = updateKeySequences(
@@ -166,84 +188,60 @@ export default class ShortcutsPlugin extends Plugin {
 			"keydown",
 			this.handleKeyDown.bind(this)
 		);
+
 		this.registerDomEvent(document, "keyup", (event: KeyboardEvent) => {
 			this.hotkeyMonitor.handleKeyUp(event);
 		});
+
+		const handleFocusEvent = (event: FocusEvent, focusing: boolean) => {
+			const target = event.target as HTMLElement;
+			if (target.closest(".cm-contentContainer")) {
+				return;
+			}
+
+			if (
+				event.target instanceof HTMLInputElement ||
+				event.target instanceof HTMLTextAreaElement ||
+				(event.target instanceof HTMLElement &&
+					event.target.isContentEditable)
+			) {
+				if (event.target instanceof HTMLElement) {
+					this.app.workspace.trigger(
+						"shortcuts:contenteditable-focus-change",
+						{
+							focusing,
+							element: event.target,
+						}
+					);
+				} else {
+					this.app.workspace.trigger("shortcuts:input-focus-change", {
+						focusing,
+						input: event.target as
+							| HTMLInputElement
+							| HTMLTextAreaElement,
+					});
+				}
+			}
+		};
+
+		this.registerDomEvent(
+			document,
+			"focusin",
+			(event: FocusEvent) => handleFocusEvent(event, true),
+			true
+		);
+
 		this.registerDomEvent(
 			document,
 			"focus",
-			(event: FocusEvent) => {
-				const target = event.target as HTMLElement;
-				if (target.closest('.cm-contentContainer')) {
-					return;
-				}
-
-				if (
-					event.target instanceof HTMLInputElement ||
-					event.target instanceof HTMLTextAreaElement ||
-					(event.target instanceof HTMLElement &&
-						event.target.isContentEditable)
-				) {
-					if (event.target instanceof HTMLElement) {
-						this.app.workspace.trigger(
-							"shortcuts:contenteditable-focus-change",
-							{
-								focusing: true,
-								element: event.target,
-							}
-						);
-					} else {
-						this.app.workspace.trigger(
-							"shortcuts:input-focus-change",
-							{
-								focusing: true,
-								input: event.target as
-									| HTMLInputElement
-									| HTMLTextAreaElement,
-							}
-						);
-					}
-				}
-			},
+			(event: FocusEvent) => handleFocusEvent(event, true),
 			true
 		);
 
 		this.registerDomEvent(
 			document,
 			"blur",
-			(event: FocusEvent) => {
-				const target = event.target as HTMLElement;
-				if (target.closest('.cm-contentContainer')) {
-					return;
-				}
-
-				if (
-					event.target instanceof HTMLInputElement ||
-					event.target instanceof HTMLTextAreaElement ||
-					(event.target instanceof HTMLElement &&
-						event.target.isContentEditable)
-				) {
-					if (event.target instanceof HTMLElement) {
-						this.app.workspace.trigger(
-							"shortcuts:contenteditable-focus-change",
-							{
-								focusing: false,
-								element: event.target,
-							}
-						);
-					} else {
-						this.app.workspace.trigger(
-							"shortcuts:input-focus-change",
-							{
-								focusing: false,
-								input: event.target as
-									| HTMLInputElement
-									| HTMLTextAreaElement,
-							}
-						);
-					}
-				}
-			},
+			(event: FocusEvent) => handleFocusEvent(event, false),
 			true
 		);
 
@@ -263,10 +261,10 @@ export default class ShortcutsPlugin extends Plugin {
 			this.app,
 			` 
 Congratulations! 🎉 **Shortcuts plugin** has been successfully loaded for the first time.
-You can now **activate Shortcuts mode** at any time, but you might want to configure your desired shortcuts first.
-To get started, press the \`Escape\` key in the top-left corner of your keyboard. This should trigger a new notice, and the Status bar icon in the bottom-right will light up.
-Then, simply press \`X\` to navigate to the Shortcuts plugin settings page.
-Remember, you can always press \`Escape\` again to exit Shortcuts mode.`,
+You are now able to activate commands using single keys \`A\`, combos \`A+B\`, and \`A then B+C then D\` sequences.
+Shortcuts mode is activated at all times except when the editor or an input field is focused and this will be indicated by a newly added icon to your status bar.
+Pressing the \`Escape\` key while focused will return you to Shortcuts mode, and pressing it again will take you back to the focused state.
+Press \`x\` to continue to the Shortcuts plugin settings page where you can configure your own shortcuts.`,
 			container,
 			"",
 			this
@@ -300,6 +298,41 @@ Remember, you can always press \`Escape\` again to exit Shortcuts mode.`,
 				},
 			})
 		);
+	}
+
+	patchSettingTab() {
+		const setting = (this.app as any).setting;
+		const prototype = Object.getPrototypeOf(setting);
+
+		const uninstaller = around(prototype, {
+			onOpen: (next) => {
+				return function (this: {
+					pluginTabs: Array<{ id: string; navEl: HTMLElement }>;
+				}) {
+					console.log(this);
+					const tab = this.pluginTabs.find((pluginTab) => {
+						return pluginTab.id === "shortcuts";
+					});
+					if (tab) {
+						(tab.navEl as HTMLElement).dataset.pluginId =
+							"shortcuts";
+
+						tab.navEl.createEl(
+							"span",
+							{
+								cls: "shortcuts-logo",
+							},
+							(el) => {
+								setIcon(el, "scissors");
+							}
+						);
+					}
+					const result = next.call(this);
+					return result;
+				};
+			},
+		});
+		this.register(uninstaller);
 	}
 
 	handleKeyDown(event: KeyboardEvent) {
