@@ -21,11 +21,13 @@ export const editorExt = (app: App) => {
 		blur: (event, view) => {
 			// Only trigger blur when actually leaving the editor or clicking metadata/title
 			if (
-				event.target instanceof HTMLElement &&
-				(!event.relatedTarget ||
-					!view.dom.contains(event.relatedTarget as Node) ||
-					event.target.closest(".metadata-container") ||
-					event.target.closest(".inline-title"))
+				(event.relatedTarget &&
+					event.target instanceof HTMLElement &&
+					((view.dom.contains(event.relatedTarget as Node) &&
+						!(event.relatedTarget as HTMLElement).closest(".cm-contentContainer")) ||
+						(event.relatedTarget as HTMLElement).closest(".metadata-container") ||
+						(event.relatedTarget as HTMLElement).closest(".inline-title"))) ||
+				!view.dom.contains(event.relatedTarget as Node)
 			) {
 				lastFocusState = false;
 				app.workspace.trigger("shortcuts:editor-focus-change", {
