@@ -7,6 +7,8 @@ interface KeySequenceSettings {
 	keyboardLayout: string;
 	sequences: KeySequenceScope[];
 	autoShortcutMode: boolean;
+	sequenceTimeoutDuration: number;
+	showCurrentSequence: boolean;
 
 	firstLoaded: boolean;
 }

@@ -561,11 +561,13 @@ export class HotkeyMonitor extends Component {
 			);
 		});
 
-		this.updateMessage(
-			sequenceString,
-			possibleMatches.length,
-			possibleMatches
-		);
+		if (this.plugin.settings.showCurrentSequence) {
+			this.updateMessage(
+				sequenceString,
+				possibleMatches.length,
+				possibleMatches
+			);
+		}
 
 		if (matchedShortcut) {
 			event.preventDefault();
@@ -575,11 +577,13 @@ export class HotkeyMonitor extends Component {
 		} else if (this.hotkeyMode && possibleMatches.length === 0) {
 			this.resetSequence();
 			this.notice?.hide();
-			this.matchesNotice?.hide();
-			this.matchesNotice = new Notice(
-				"No shortcut found for " + sequenceString,
-				5000
-			);
+			if (this.plugin.settings.showCurrentSequence) {
+				this.matchesNotice?.hide();
+				this.matchesNotice = new Notice(
+					"No shortcut found for " + sequenceString,
+					this.plugin.settings.sequenceTimeoutDuration
+				);
+			}
 		}
 	}
 
@@ -642,7 +646,10 @@ export class HotkeyMonitor extends Component {
 		if (this.sequenceTimer) {
 			clearTimeout(this.sequenceTimer);
 		}
-		this.sequenceTimer = setTimeout(() => this.resetSequence(), 5000);
+		this.sequenceTimer = setTimeout(
+			() => this.resetSequence(),
+			this.plugin.settings.sequenceTimeoutDuration
+		);
 	}
 
 	private isInputOrEditorOrContentEditable(e: KeyboardEvent): boolean {

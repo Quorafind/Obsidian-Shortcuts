@@ -53,6 +53,8 @@ export const DEFAULT_KEY_SEQUENCE_SETTINGS: KeySequenceSettings = {
 	showShortcutActivatedNotice: false,
 	keyboardLayout: "qwerty",
 	autoShortcutMode: true,
+	sequenceTimeoutDuration: 5000,
+	showCurrentSequence: true,
 	firstLoaded: true,
 };
 
@@ -220,6 +222,35 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 					.onChange((value) => {
 						this.plugin.settings.showShortcutActivatedNotice =
 							value;
+						this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Sequence timeout duration")
+			.setDesc(
+				"How long to wait (in milliseconds) before resetting the current key sequence"
+			)
+			.addSlider((slider) => {
+				slider
+					.setLimits(1000, 10000, 500)
+					.setValue(this.plugin.settings.sequenceTimeoutDuration)
+					.onChange((value) => {
+						this.plugin.settings.sequenceTimeoutDuration = value;
+						this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Show current sequence")
+			.setDesc(
+				"Show the current key sequence and possible matches while typing"
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.showCurrentSequence)
+					.onChange((value) => {
+						this.plugin.settings.showCurrentSequence = value;
 						this.plugin.saveSettings();
 					});
 			});
