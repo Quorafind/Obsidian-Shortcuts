@@ -649,7 +649,7 @@ export class HotkeyMonitor extends Component {
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
 			(e.target instanceof HTMLElement && e.target.isContentEditable)
-		);
+		) && !this.isTargetInCodeMirror(e);
 	}
 
 	private isTargetInCodeMirror(e: KeyboardEvent): boolean {
