@@ -19,15 +19,21 @@ export const editorExt = (app: App) => {
 			}
 		},
 		blur: (event, view) => {
-			// Only trigger blur when actually leaving the editor
-			if (event.relatedTarget && !view.dom.contains(event.relatedTarget as Node)) {
+			// Only trigger blur when actually leaving the editor or clicking metadata/title
+			if (
+				event.target instanceof HTMLElement &&
+				(!event.relatedTarget ||
+					!view.dom.contains(event.relatedTarget as Node) ||
+					event.target.closest(".metadata-container") ||
+					event.target.closest(".inline-title"))
+			) {
 				lastFocusState = false;
 				app.workspace.trigger("shortcuts:editor-focus-change", {
-					focusing: false, 
+					focusing: false,
 					editor: view.state.field(editorInfoField).editor,
 					pos: view.state.selection.main,
 				});
 			}
-		}
+		},
 	});
 };
