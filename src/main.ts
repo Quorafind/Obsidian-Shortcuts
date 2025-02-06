@@ -171,6 +171,7 @@ export default class ShortcutsPlugin extends Plugin {
 			},
 		});
 	}
+	
 	async initHotkeyMonitor() {
 		this.settings.sequences = updateKeySequences(
 			this.app,

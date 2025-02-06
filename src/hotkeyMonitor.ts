@@ -82,15 +82,25 @@ export class HotkeyMonitor extends Component {
 		this.statusBarItem = this.plugin.addStatusBarItem();
 		this.statusBarItem.toggleClass(["shortcuts-status-item"], true);
 
+		const statusBarButton = this.createStatusBarButton();
+		this.setupStatusBarContextMenu(statusBarButton);
+
+		const activeElement = document.activeElement;
+		if (activeElement?.closest(".cm-contentContainer")) {
+			this.app.workspace.trigger("shortcuts:editor-focus-change", {
+				focusing: true,
+				editor: this.editor,
+				pos: this.pos,
+			});
+			return;
+		}
+
 		if (this.plugin.settings.autoShortcutMode) {
 			this.statusBarItem.toggleClass("mod-active", true);
 			setTooltip(this.statusBarItem, "Auto-shortcut mode enabled", {
 				placement: "top",
 			});
 		}
-
-		const statusBarButton = this.createStatusBarButton();
-		this.setupStatusBarContextMenu(statusBarButton);
 	}
 
 	private createStatusBarButton(): ExtraButtonComponent {
@@ -646,10 +656,12 @@ export class HotkeyMonitor extends Component {
 
 	private isTargetInInputOrContentEditable(e: KeyboardEvent): boolean {
 		return (
-			e.target instanceof HTMLInputElement ||
-			e.target instanceof HTMLTextAreaElement ||
-			(e.target instanceof HTMLElement && e.target.isContentEditable)
-		) && !this.isTargetInCodeMirror(e);
+			(e.target instanceof HTMLInputElement ||
+				e.target instanceof HTMLTextAreaElement ||
+				(e.target instanceof HTMLElement &&
+					e.target.isContentEditable)) &&
+			!this.isTargetInCodeMirror(e)
+		);
 	}
 
 	private isTargetInCodeMirror(e: KeyboardEvent): boolean {
