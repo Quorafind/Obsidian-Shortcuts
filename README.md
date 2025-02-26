@@ -5,17 +5,20 @@
   <img alt="Shows project promo image in light and dark mode" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
 </picture>
 
-## Shortcuts
+# Overview
 
-You can set up shortcuts for all commands.
+_Move faster in Obsidian with Shortcuts!_
 
-Basically, it supports:
+This plugin adds the ability to activate commands using multiple shortcut methods. A scissors icon is added to the status bar and shown as active/inactive to indicate when shortcuts can be used. Right-click on this scissors icon to view your currently assigned shortcuts at a glance.
 
-- With modifier: `Ctrl + V`
-- Combo: `C + V`
-- Single: `C`
 
-And it shows: `a then c+b then d` when you press `a`, `c+b`, `d` in sequence.
+# Shortcut types
+| Shortcut type  | Description | Example |
+| ------------- | ------------- | ------------- |
+| Single key press | Press a single key to trigger an action | S |
+| Multi-key press | Press multiple keys simultaneously to trigger an action | A + B |
+| Key press with modifier | Combine a key with a modifier (e.g., Ctrl, Shift, Alt) | Ctrl + V |
+| Key sequence | Multiple shortcut types combined in sequence | A then C + B then D (press A, C + B, D in sequence) |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/24ebbd18-1064-40b5-b03a-212edc50f664">
@@ -24,11 +27,42 @@ And it shows: `a then c+b then d` when you press `a`, `c+b`, `d` in sequence.
   <img alt="Shows project promo image in light and dark mode" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
 </picture>
 
+# Features
 
-### Claim
+## Auto-shortcuts mode
 
-- Designer: Johnny
-- Developer: Boninall
+With this setting enabled, the ability to activate shortcuts will be enabled at all times, except when the editor or input field is focused.
+
+## Scoped shortcuts
+
+This feature allows a command to be activated by a shortcut depending on the users location within Obsidian. At the moment, shortcuts can be set to trigger in the following scopes:
+
+**General:** the editor, sidebars, graph view
+
+**Editor:** the space where files are read and modified
+
+**UI:** shortcuts which are tied to components of the interface and shows that components shortcut in a tooltip on hover
+
+Additionally, a UI element can have a shortcut set via right-click on the icon button
+
+## Surfing
+
+A special mode that generates a shortcut near any clickable element.
+
+# Recommendations
+
+Consider combining Shortcuts with the following plugin-ins:
+
+[Floating search](https://github.com/Quorafind/Obsidian-Float-Search)
+
+[Large Language Models](https://github.com/eharris128/Obsidian-LLM-Plugin)
+
+[Workspaces Plus](https://github.com/jsmorabito/obsidian-workspaces-plus)
+
+# Claim
+
+- Designer: [Johnny](https://github.com/jsmorabito)
+- Developer: [Boninall](https://github.com/Quorafind)
 
 - Credit for pixel art scissors: https://es.pixilart.com/art/rending-scissors-slash-51ea972a215c4f9
 
