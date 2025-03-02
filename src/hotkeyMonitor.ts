@@ -15,8 +15,7 @@ import { AVAILABLE_CONFIGS, updateKeySequences } from "./keySequence";
 import { editorExt } from "./editor-ext";
 import { SelectionRange } from "@codemirror/state";
 import { TipsView } from "./tips-view";
-
-const keycode = require("keycode");
+import keycode from "keycode";
 
 type Action = (app: App) => void;
 type CommandId = string;

@@ -21,9 +21,8 @@ import {
 import { KeySequenceSettings } from "./types/settings";
 import { AVAILABLE_CONFIGS } from "./keySequence";
 import ShortcutsPlugin from "./main";
-
-const keycode = require("keycode");
-const confetti = require("canvas-confetti");
+import keycode from "keycode";
+import confetti from "canvas-confetti";
 
 const HEADER_ARRAY: AvailableScope[] = [
 	"General",

@@ -1,9 +1,9 @@
 {
 	"id": "shortcuts",
 	"name": "Shortcuts",
-	"version": "0.3.8",
+	"version": "0.3.9",
 	"minAppVersion": "0.15.0",
-	"description": "A shortcuts plugin for power users.",
+	"description": "Activate commands using multiple shortcut methods.",
 	"author": "Johnny & Boninall",
 	"authorUrl": "https://github.com/Quorafind",
 	"fundingUrl": {
