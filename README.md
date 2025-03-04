@@ -11,6 +11,14 @@ _Move faster in Obsidian with Shortcuts!_
 
 This plugin adds the ability to activate commands using multiple shortcut methods. A scissors icon is added to the status bar and shown as active/inactive to indicate when shortcuts can be used. Right-click on this scissors icon to view your currently assigned shortcuts at a glance.
 
+> [!NOTE]
+> When entering shortcuts mode, the plugin listens for all hotkey sequences that are pressed:
+> For example, when you press:
+> `a` then `b`, it will search if there is an asigned command and then judge if it should trigger a command
+> of course, you can use `a+b` then `a` then `a`, and more.
+>
+> Shortcuts mode will not function when focus is on an input element or the editor.
+
 
 # Shortcut types
 | Shortcut type  | Description | Example |
