@@ -113,7 +113,7 @@ While in shortcut mode you can press `I` (or your configured focus key) to retur
 | --- | --- |
 | Shortcuts keep firing while I type | Disable auto-shortcut mode or choose a different trigger key. |
 | Nothing happens when I press a sequence | Check the timeout value; long pauses reset the sequence. Also ensure no modal dialogs are open if `Esc` is the trigger key. |
-| Surfing labels do not appear | Confirm Surfing is enabled in settings and that the active view supports it. |
+| Surfing labels do not appear | Confirm surfing feature is enabled in settings and that the active view supports it. |
 | I forgot what a shortcut does | Right-click the status bar scissors for the Tips view or review the Sequences list in settings. |
 
 ---
