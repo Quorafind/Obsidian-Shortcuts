@@ -13,7 +13,7 @@ import {
 } from "obsidian";
 import { KeySequenceConfig } from "./types/key";
 import { KeySequenceSettings } from "./types/settings";
-import { HotkeyMonitor } from "./hotkeyMonitor";
+import { ShortcutManager } from "./core/ShortcutManager";
 import {
 	DEFAULT_KEY_SEQUENCE_SETTINGS,
 	ShortcutsSettingTab,
@@ -35,7 +35,7 @@ export default class ShortcutsPlugin extends Plugin {
 
 	settings: KeySequenceSettings;
 	settingTab: ShortcutsSettingTab;
-	hotkeyMonitor: HotkeyMonitor;
+	hotkeyMonitor: ShortcutManager;
 	tooltipObserver: TooltipObserver;
 
 	konamiListener: Component;
@@ -181,7 +181,7 @@ export default class ShortcutsPlugin extends Plugin {
 		const allConfigs: KeySequenceConfig[] = this.settings.sequences.flatMap(
 			(s) => s.configs
 		);
-		this.hotkeyMonitor = new HotkeyMonitor(this, this.app, allConfigs);
+		this.hotkeyMonitor = new ShortcutManager(this, this.app, allConfigs);
 		this.addChild(this.hotkeyMonitor);
 
 		this.registerDomEvent(
