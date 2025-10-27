@@ -47,6 +47,7 @@ export class ShortcutManager extends Component {
 	private keyParser: KeyParser;
 	private keyboardListener: KeyboardListener;
 	private sequenceMatcher: SequenceMatcher;
+	private editorScopeMatcher: SequenceMatcher;
 	private shortcutExecutor: ShortcutExecutor;
 	private statusBarManager: StatusBarManager;
 	private notificationService: NotificationService;
@@ -91,6 +92,7 @@ export class ShortcutManager extends Component {
 			this.keyParser
 		);
 		this.sequenceMatcher = new SequenceMatcher(200); // 200ms combo threshold
+		this.editorScopeMatcher = new SequenceMatcher(200);
 
 		// Executor
 		this.shortcutExecutor = new ShortcutExecutor(this.app);
@@ -449,9 +451,67 @@ export class ShortcutManager extends Component {
 	}
 
 	/**
+	 * Execute shortcuts while editor scope mode captures key input.
+	 *
+	 * @param key - Parsed key string (for example "ctrl+b" or "g")
+	 */
+	executeEditorScopeShortcut(key: string): void {
+		this.editorScopeMatcher.addKey(key);
+		this.editorScopeMatcher.startTimer(
+			this.plugin.settings.sequenceTimeoutDuration,
+			() => {
+				this.notificationService.hideAll();
+				this.editorScopeMatcher.reset();
+			}
+		);
+
+		const matchResult = this.editorScopeMatcher.findMatch(this.shortcuts);
+		const currentSequence = this.editorScopeMatcher.getCurrentSequenceString();
+
+		if (this.plugin.settings.showCurrentSequence) {
+			this.notificationService.showCurrentSequence(
+				currentSequence,
+				matchResult.possibleMatches.length,
+				matchResult.possibleMatches
+			);
+		}
+
+		if (matchResult.matched) {
+			this.shortcutExecutor.execute(matchResult.matched);
+
+			if (this.plugin.settings.showShortcutActivatedNotice) {
+				this.notificationService.showShortcutExecuted(
+					matchResult.matched.name
+				);
+			}
+
+			this.editorScopeMatcher.reset();
+			return;
+		}
+
+		if (matchResult.possibleMatches.length === 0) {
+			this.editorScopeMatcher.reset();
+			this.notificationService.hideActivationNotice();
+
+			if (this.plugin.settings.showCurrentSequence) {
+				this.notificationService.showNoMatch(currentSequence);
+			}
+		}
+	}
+
+	/**
+	 * Clear editor scope sequence state when the mode is toggled off.
+	 */
+	resetEditorScopeSequence(): void {
+		this.editorScopeMatcher.reset();
+		this.notificationService.hideAll();
+	}
+
+	/**
 	 * Clean up resources
 	 */
 	unload(): void {
+		this.editorScopeMatcher.dispose();
 		this.sequenceMatcher.dispose();
 		this.notificationService.dispose();
 		this.statusBarManager.destroy();

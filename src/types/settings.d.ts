@@ -10,5 +10,10 @@ interface KeySequenceSettings {
 	sequenceTimeoutDuration: number;
 	showCurrentSequence: boolean;
 
+	// Editor Scope Mode settings
+	editorScopeEnabled: boolean;
+	editorScopeTrigger: string;
+	editorScopeShowBorder: boolean;
+
 	firstLoaded: boolean;
 }

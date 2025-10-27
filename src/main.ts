@@ -1,4 +1,4 @@
-import {
+﻿import {
 	Component,
 	Editor,
 	EditorPosition,
@@ -23,6 +23,7 @@ import { TooltipObserver } from "./tooltip";
 import { getAllSupportedShortcuts } from "./utils";
 import { around } from "monkey-around";
 import ElementMonitor from "./surfing-key/element-monitor";
+import { EditorScopeManager } from "./core/editor-scope/EditorScopeManager";
 
 export default class ShortcutsPlugin extends Plugin {
 	currentSequence: string[] = [];
@@ -40,8 +41,11 @@ export default class ShortcutsPlugin extends Plugin {
 
 	konamiListener: Component;
 
-	capturing: boolean = false;
-	modalOpened: boolean = false;
+	capturing = false;
+	modalOpened = false;
+
+	// Editor Scope Mode
+	editorScopeManager: EditorScopeManager | null = null;
 
 	private originalEscapeFunction:
 		| ((evt: KeyboardEvent, ctx: any) => void)
@@ -57,6 +61,12 @@ export default class ShortcutsPlugin extends Plugin {
 
 		this.app.workspace.onLayoutReady(() => {
 			this.initHotkeyMonitor();
+			// Initialize and register the editor scope manager
+			this.editorScopeManager = new EditorScopeManager(this);
+			this.registerEditorExtension(
+				this.editorScopeManager.createExtension(),
+			);
+
 			this.patchOriginalEscapeScope();
 			this.patchModalScope(this);
 			this.initTooltipObserver(this);
@@ -74,12 +84,15 @@ export default class ShortcutsPlugin extends Plugin {
 		this.removeChild(this.hotkeyMonitor);
 		this.removeChild(this.tooltipObserver);
 		this.restoreOriginalEscapeScope();
+		// Dispose editor scope manager state
+		this.editorScopeManager?.destroy();
+		this.editorScopeManager = null;
 	}
 
 	patchOriginalEscapeScope() {
 		const scope = this.app.scope as any; // Type assertion to avoid TypeScript errors
 		const originalEscapeIndex = scope.keys.findIndex(
-			(key: any) => key.key === "Escape"
+			(key: any) => key.key === "Escape",
 		);
 
 		if (originalEscapeIndex !== -1) {
@@ -108,7 +121,7 @@ export default class ShortcutsPlugin extends Plugin {
 			const scope = this.app.scope as any;
 			// Remove the patched Escape key binding
 			const patchedEscapeIndex = scope.keys.findIndex(
-				(key: any) => key.key === "Escape"
+				(key: any) => key.key === "Escape",
 			);
 			if (patchedEscapeIndex !== -1) {
 				scope.keys.splice(patchedEscapeIndex, 1);
@@ -128,7 +141,7 @@ export default class ShortcutsPlugin extends Plugin {
 						return next.apply(this, args);
 					};
 				},
-			})
+			}),
 		);
 	}
 
@@ -164,22 +177,22 @@ export default class ShortcutsPlugin extends Plugin {
 						() => {
 							this.documentMonitor = null;
 						},
-						this
+						this,
 					);
 					this.documentMonitor.init();
 				}
 			},
 		});
 	}
-	
+
 	async initHotkeyMonitor() {
 		this.settings.sequences = updateKeySequences(
 			this.app,
-			this.settings.sequences
+			this.settings.sequences,
 		);
 
 		const allConfigs: KeySequenceConfig[] = this.settings.sequences.flatMap(
-			(s) => s.configs
+			(s) => s.configs,
 		);
 		this.hotkeyMonitor = new ShortcutManager(this, this.app, allConfigs);
 		this.addChild(this.hotkeyMonitor);
@@ -187,7 +200,7 @@ export default class ShortcutsPlugin extends Plugin {
 		this.registerDomEvent(
 			document,
 			"keydown",
-			this.handleKeyDown.bind(this)
+			this.handleKeyDown.bind(this),
 		);
 
 		this.registerDomEvent(document, "keyup", (event: KeyboardEvent) => {
@@ -212,7 +225,7 @@ export default class ShortcutsPlugin extends Plugin {
 						{
 							focusing,
 							element: event.target,
-						}
+						},
 					);
 				} else {
 					this.app.workspace.trigger("shortcuts:input-focus-change", {
@@ -229,21 +242,21 @@ export default class ShortcutsPlugin extends Plugin {
 			document,
 			"focusin",
 			(event: FocusEvent) => handleFocusEvent(event, true),
-			true
+			true,
 		);
 
 		this.registerDomEvent(
 			document,
 			"focus",
 			(event: FocusEvent) => handleFocusEvent(event, true),
-			true
+			true,
 		);
 
 		this.registerDomEvent(
 			document,
 			"blur",
 			(event: FocusEvent) => handleFocusEvent(event, false),
-			true
+			true,
 		);
 
 		await this.saveSettings();
@@ -260,15 +273,15 @@ export default class ShortcutsPlugin extends Plugin {
 		});
 		MarkdownRenderer.render(
 			this.app,
-			` 
-Congratulations! 🎉 **Shortcuts plugin** has been successfully loaded for the first time.
+			`
+Congratulations! 馃帀 **Shortcuts plugin** has been successfully loaded for the first time.
 You are now able to activate commands using single keys \`A\`, combos \`A+B\`, and \`A then B+C then D\` sequences.
 Shortcuts mode is activated at all times except when the editor or an input field is focused and this will be indicated by a newly added icon to your status bar.
 Pressing the \`Escape\` key while focused will return you to Shortcuts mode, and pressing it again will take you back to the focused state.
 Press \`x\` to continue to the Shortcuts plugin settings page where you can configure your own shortcuts.`,
 			container,
 			"",
-			this
+			this,
 		);
 
 		new Notice(fragment, 20000);
@@ -297,7 +310,7 @@ Press \`x\` to continue to the Shortcuts plugin settings page where you can conf
 						return next.apply(this, args);
 					};
 				},
-			})
+			}),
 		);
 	}
 
@@ -325,7 +338,7 @@ Press \`x\` to continue to the Shortcuts plugin settings page where you can conf
 							},
 							(el) => {
 								setIcon(el, "scissors");
-							}
+							},
 						);
 					}
 					const result = next.call(this);
@@ -347,7 +360,7 @@ Press \`x\` to continue to the Shortcuts plugin settings page where you can conf
 	async saveSettings() {
 		await this.saveData(this.settings);
 		const allConfigs: KeySequenceConfig[] = this.settings.sequences.flatMap(
-			(s) => s.configs
+			(s) => s.configs,
 		);
 		this.hotkeyMonitor.updateShortcuts(allConfigs);
 		this.hotkeyMonitor.updateTriggerKey();
@@ -357,7 +370,7 @@ Press \`x\` to continue to the Shortcuts plugin settings page where you can conf
 		this.settings = Object.assign(
 			{},
 			DEFAULT_KEY_SEQUENCE_SETTINGS,
-			await this.loadData()
+			await this.loadData(),
 		);
 	}
 }

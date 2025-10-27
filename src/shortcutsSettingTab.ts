@@ -4,6 +4,7 @@ import {
 	ExtraButtonComponent,
 	Menu,
 	Modal,
+	Notice,
 	Platform,
 	PluginSettingTab,
 	prepareFuzzySearch,
@@ -54,6 +55,9 @@ export const DEFAULT_KEY_SEQUENCE_SETTINGS: KeySequenceSettings = {
 	autoShortcutMode: true,
 	sequenceTimeoutDuration: 5000,
 	showCurrentSequence: true,
+	editorScopeEnabled: true,
+	editorScopeTrigger: "Alt-s s",
+	editorScopeShowBorder: true,
 	firstLoaded: true,
 };
 
@@ -101,9 +105,10 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.plugin.hotkeyMonitor.updateConfig();
 
 		this.filteredConfigs = this.filterAndSearchConfigs(
-			this.plugin.settings.sequences[0].configs
+			this.plugin.settings.sequences[0].configs,
 		);
 		this.createGeneralSettings(containerEl);
+		this.createEditorScopeSettings(containerEl);
 		this.createSearchAndFilterComponents(containerEl);
 		this.generateHotkeyList();
 		this.createHr(containerEl);
@@ -112,7 +117,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 	partDisplay(
 		containerEl: HTMLElement,
-		filterStatus: "all" | "unassigned" | "assigned"
+		filterStatus: "all" | "unassigned" | "assigned",
 	): void {
 		containerEl.empty();
 		this.containerEl = containerEl;
@@ -122,7 +127,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.plugin.hotkeyMonitor.updateConfig();
 
 		this.filteredConfigs = this.filterAndSearchConfigs(
-			this.plugin.settings.sequences[0].configs
+			this.plugin.settings.sequences[0].configs,
 		);
 
 		// this.createGeneralSettings(containerEl);
@@ -167,7 +172,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Auto-shortcuts mode")
 			.setDesc(
-				"Shortcuts mode is active at all times except when the editor or an input field is focused"
+				"Shortcuts mode is active at all times except when the editor or an input field is focused",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -195,7 +200,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 					.setTooltip("Set shortcut mode trigger")
 					.onClick(() => {
 						this.captureShortcutModeTrigger(hotkeyContainer);
-					})
+					}),
 			);
 
 		new Setting(containerEl)
@@ -213,7 +218,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Show shortcut activation signifier")
 			.setDesc(
-				"Show the toast notification that signals when a shortcut is activated"
+				"Show the toast notification that signals when a shortcut is activated",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -228,7 +233,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Sequence timeout duration")
 			.setDesc(
-				"How long to wait (in milliseconds) before resetting the current key sequence"
+				"How long to wait (in milliseconds) before resetting the current key sequence",
 			)
 			.addSlider((slider) => {
 				slider
@@ -243,7 +248,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Show current sequence")
 			.setDesc(
-				"Show the current key sequence and possible matches while typing"
+				"Show the current key sequence and possible matches while typing",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -267,13 +272,79 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.createHr(containerEl);
 	}
 
+	createEditorScopeSettings(containerEl: HTMLElement): void {
+		// Add a heading for the editor scope mode section
+		new Setting(containerEl).setName("Editor scope mode").setHeading();
+
+		containerEl.createEl("p", {
+			text: "Enable continuous shortcut execution in the editor without repeatedly pressing Esc. This allows you to trigger multiple shortcuts in sequence (for example Q, then Q+S, then Q+T) without leaving shortcut mode between commands.",
+			cls: "setting-item-description",
+		});
+
+		// Toggle control for enabling the feature
+		new Setting(containerEl)
+			.setName("Enable editor scope mode")
+			.setDesc(
+				"Toggle this feature on or off. You'll need to reload Obsidian after changing this setting.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.editorScopeEnabled)
+					.onChange(async (value) => {
+						this.plugin.settings.editorScopeEnabled = value;
+						await this.plugin.saveSettings();
+						new Notice(
+							"Please reload Obsidian for changes to take effect",
+							4000,
+						);
+					});
+			});
+
+		// Trigger shortcut configuration
+		new Setting(containerEl)
+			.setName("Trigger shortcut")
+			.setDesc(
+				'Keyboard shortcut to toggle editor scope mode. Format: "Alt-s s" means press Alt+S, release, then press S again. You can also use single keys like "Alt-s" or "Ctrl-e".',
+			)
+			.addText((text) => {
+				text.setPlaceholder("Alt-s s")
+					.setValue(this.plugin.settings.editorScopeTrigger)
+					.onChange(async (value) => {
+						this.plugin.settings.editorScopeTrigger =
+							value || "Alt-s s";
+						await this.plugin.saveSettings();
+						new Notice(
+							"Please reload Obsidian for changes to take effect",
+							4000,
+						);
+					});
+			});
+
+		// Visual feedback setting
+		new Setting(containerEl)
+			.setName("Show border decoration")
+			.setDesc(
+				"Display a colored border and indicator around the editor when scope mode is active, making it clear when the mode is enabled.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.editorScopeShowBorder)
+					.onChange(async (value) => {
+						this.plugin.settings.editorScopeShowBorder = value;
+						await this.plugin.saveSettings();
+					});
+			});
+	}
+
+
+
 	createHr(containerEl: HTMLElement): void {
 		const dividerEl = containerEl.createDiv(
 			{ cls: "settings-divider" },
 			(el) => {
 				const iconEl = el.createSpan({ cls: "settings-divider-icon" });
 				setIcon(iconEl, "scissors");
-			}
+			},
 		);
 	}
 
@@ -368,7 +439,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 						this.updateFilterDisplay();
 						this.generateHotkeyList();
 					});
-				}
+				},
 			);
 		}
 	}
@@ -381,7 +452,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		for (const header of HEADER_ARRAY) {
 			const scope = this.plugin.settings.sequences.find(
-				(scope: KeySequenceScope) => scope.scope === header
+				(scope: KeySequenceScope) => scope.scope === header,
 			);
 			const configs = scope?.configs;
 
@@ -408,7 +479,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 						const childSetting = this.createShortcutSetting(
 							this.hotkeyContainer,
 							config,
-							header
+							header,
 						);
 						childList.push(childSetting);
 					}
@@ -424,7 +495,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 									? child.settingEl.show()
 									: child.settingEl.hide();
 							});
-						}
+						},
 					);
 				}
 			}
@@ -432,7 +503,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		if (this.showShortcutsDom) {
 			this.showShortcutsDom.setDesc(
-				"Showing " + this.showedCommands + " shortcuts"
+				"Showing " + this.showedCommands + " shortcuts",
 			);
 		}
 	}
@@ -479,7 +550,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 					cls: "special-version",
 					text: this.plugin.manifest.version,
 				});
-			}
+			},
 		);
 
 		this.plugin.clearAllListeners();
@@ -503,7 +574,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 						setTimeout(() => {
 							window.open(
 								"https://github.com/Quorafind/Obsidian-Shortcuts/wiki/Donate",
-								"_blank"
+								"_blank",
 							);
 						}, 400);
 
@@ -517,7 +588,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 					this.resetKonamiHighlight(comboEl);
 					konamiIndex = 0;
 				}
-			}
+			},
 		);
 		this.plugin.addChild(this.plugin.konamiListener);
 	}
@@ -527,16 +598,16 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			const span = comboEl.createSpan();
 			switch (key) {
 				case "ArrowUp":
-					span.setText("↑");
+					span.setText("\u2191");
 					break;
 				case "ArrowDown":
-					span.setText("↓");
+					span.setText("\u2193");
 					break;
 				case "ArrowLeft":
-					span.setText("←");
+					span.setText("\u2190");
 					break;
 				case "ArrowRight":
-					span.setText("→");
+					span.setText("\u2192");
 					break;
 				default:
 					span.setText(key.toUpperCase());
@@ -567,11 +638,11 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		if (this.filterStatus === "unassigned") {
 			filteredConfigsTemp = filteredConfigsTemp.filter(
-				(config) => config.sequence.length === 0
+				(config) => config.sequence.length === 0,
 			);
 		} else if (this.filterStatus === "assigned") {
 			filteredConfigsTemp = filteredConfigsTemp.filter(
-				(config) => config.sequence.length > 0
+				(config) => config.sequence.length > 0,
 			);
 		}
 		if (this.searchQuery) {
@@ -591,13 +662,13 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 	createShortcutSetting(
 		containerEl: HTMLElement,
 		config: KeySequenceConfig,
-		scope: AvailableScope
+		scope: AvailableScope,
 	): Setting {
 		const setting = new Setting(containerEl).setName(
 			config.name ||
 				(typeof config.action === "string"
 					? config.action
-					: "Custom action")
+					: "Custom action"),
 		);
 
 		const hotkeyContainer = setting.controlEl.createDiv({
@@ -613,7 +684,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 					this.commandId = config.id;
 					this.currentSequence = [];
 					this.renderHotkeyStatus(hotkeyContainer, config);
-				})
+				}),
 		);
 
 		return setting;
@@ -621,11 +692,11 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 	renderHotkeyStatus(
 		containerEl: HTMLElement | null,
-		config: KeySequenceConfig | null
+		config: KeySequenceConfig | null,
 	): void {
 		if (!containerEl || !config) {
 			console.warn(
-				"Container element or config is null in renderHotkeyStatus"
+				"Container element or config is null in renderHotkeyStatus",
 			);
 			return;
 		}
@@ -648,7 +719,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 						this.plugin.saveSettings();
 						this.renderHotkeyStatus(containerEl, config);
 					});
-				}
+				},
 			);
 		}
 
@@ -668,7 +739,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 						.onClick(() => {
 							this.finishCapture(containerEl, config);
 						});
-				}
+				},
 			);
 			this.captureHotkey(activeSpan, config);
 		} else if (config.sequence.length === 0) {
@@ -747,7 +818,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.innerComponent.registerDomEvent(
 			document,
 			"keydown",
-			handleKeyDown
+			handleKeyDown,
 		);
 		this.innerComponent.registerDomEvent(document, "keyup", handleKeyUp);
 
@@ -758,7 +829,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 	finishCapture(
 		element: HTMLElement | null,
-		config: KeySequenceConfig
+		config: KeySequenceConfig,
 	): void {
 		this.isCapturing = false;
 		this.commandId = null;
@@ -772,7 +843,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		if (!element) {
 			element = this.containerEl.querySelector(
-				".setting-command-hotkeys"
+				".setting-command-hotkeys",
 			);
 		}
 
@@ -812,7 +883,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 	updateDisplay(): void {
 		const activeSpan = this.containerEl.querySelector(
-			".setting-hotkey.mod-active"
+			".setting-hotkey.mod-active",
 		);
 		if (activeSpan) {
 			activeSpan.setText(this.formatSequence(this.currentSequence));
@@ -875,7 +946,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			hotkeySpan.setText(
 				this.formatSequence([
 					[this.plugin.settings.shortcutModeTrigger],
-				])
+				]),
 			);
 			const deleteButton = hotkeySpan.createSpan(
 				{
@@ -890,7 +961,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 						this.display();
 					});
-				}
+				},
 			);
 		}
 	}
@@ -913,7 +984,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 						this.display();
 					});
-			}
+			},
 		);
 
 		this.isCapturing = true;
@@ -957,7 +1028,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		this.innerComponent.registerDomEvent(
 			document,
 			"keydown",
-			handleKeyDown
+			handleKeyDown,
 		);
 		this.innerComponent.registerDomEvent(document, "keyup", handleKeyUp);
 	}
@@ -1029,3 +1100,4 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 // 		this.scope.keys.length = 0;
 // 	}
 // }
+

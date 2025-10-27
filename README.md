@@ -1,9 +1,8 @@
-# Shortcuts Plugin for Obsidian
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/0f694cc2-1536-4a53-b13b-9fa31f04a967">
-  <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/459555bc-7a93-4c45-8b09-cbe303a9834a">
-  <img alt="Shortcuts plugin preview" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/459555bc-7a93-4c45-8b09-cbe303a9834a")
+">
+  <img alt="Shows project promo image in light and dark mode" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
 </picture>
 
 ## Why use Shortcuts?
@@ -53,6 +52,13 @@ Right-click the scissors icon at any time to see your active shortcut list and t
 | Simultaneous combo | Press several keys together | `J + K` |
 | Hybrid sequence | Mix combos and singles in order | `Ctrl+K then V then Shift+Tab` |
 | Surfing hint | Temporary key labels placed next to UI elements | `AA`, `SC`, etc. |
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/24ebbd18-1064-40b5-b03a-212edc50f664">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/7e06eb8f-3175-4e5c-b788-5a1534e23ab3")
+">
+  <img alt="Shows project promo image in light and dark mode" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+</picture>
 
 Sequences are evaluated left to right. For example, if you configure `Ctrl+J then P`, pressing `Ctrl+J`, releasing, then pressing `P` will run the mapped command.
 
@@ -124,8 +130,8 @@ While in shortcut mode you can press `I` (or your configured focus key) to retur
 - **Development:** [Boninall](https://github.com/Quorafind)
 - Pixel-art scissors: [Pixilart](https://es.pixilart.com/art/rending-scissors-slash-51ea972a215c4f9)
 
----
-
-## For developers
-
-See [README-DEV.md](./README-DEV.md) for build instructions, architecture notes, and contribution guidelines. PRs are welcome—please follow the documented conventions and add tests or manual verification notes for any behavior changes.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/f05aca7d-9577-4b8c-a1f5-32f0bfffc9c3">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/ed44b0e7-c7c2-428f-ba64-a4be230c074e">
+  <img alt="Shows project promo image in light and dark mode" src="https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png">
+</picture>

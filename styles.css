@@ -309,3 +309,45 @@ span.shortcuts-logo {
 	margin-left: var(--size-2-2);
 	color: var(--color-accent);
 }
+
+/* ============================================
+   Editor Scope Mode - Visual Styles
+   ============================================ */
+
+/* Editor border highlight when scope mode is active */
+.cm-editor.editor-scope-active {
+	position: relative;
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+	border-radius: 6px;
+	box-shadow: 0 0 0 4px rgba(var(--interactive-accent-rgb), 0.15);
+	transition: all 0.2s ease-in-out;
+}
+
+/* Dark theme optimization */
+.theme-dark .cm-editor.editor-scope-active {
+	box-shadow: 0 0 0 4px rgba(var(--interactive-accent-rgb), 0.25);
+}
+
+/* Status indicator (top-right corner badge) */
+.cm-editor.editor-scope-active::before {
+	content: "🎯 Scope";
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	z-index: 100;
+	pointer-events: none;
+	opacity: 0.95;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Hover effect on indicator */
+.cm-editor.editor-scope-active:hover::before {
+	opacity: 1;
+}
