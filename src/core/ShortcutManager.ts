@@ -63,6 +63,15 @@ export class ShortcutManager extends Component {
 	public hotkeyMode: boolean = false;
 	private triggerKey: string;
 
+	/**
+	 * Time window after construction during which the first editor
+	 * auto-focus is assumed to be Obsidian's startup restoration rather
+	 * than a genuine user click (see hasInterceptedInitialFocus).
+	 */
+	private static readonly INITIAL_AUTO_FOCUS_WINDOW_MS = 2000;
+	private readonly constructedAt = Date.now();
+	private hasInterceptedInitialFocus = false;
+
 	constructor(
 		plugin: ShortcutsPlugin,
 		app: App,
@@ -133,6 +142,7 @@ export class ShortcutManager extends Component {
 		const activeElement = document.activeElement;
 		if (activeElement?.closest(".cm-contentContainer")) {
 			if (this.plugin.settings.disableAutoFocusOnFileOpen) {
+				this.hasInterceptedInitialFocus = true;
 				this.blurEditor();
 				this.enterHotkeyModeIfUnfocused();
 				return;
@@ -142,6 +152,14 @@ export class ShortcutManager extends Component {
 				editor: null,
 				pos: { from: 0, to: 0 },
 			});
+			return;
+		}
+
+		// Nothing has focus yet at startup (e.g. the restored active leaf
+		// is a blank "New tab" with no editor at all, so there's nothing
+		// to auto-focus or blur). Arm shortcut mode directly in this case.
+		if (this.plugin.settings.disableAutoFocusOnFileOpen) {
+			this.enterHotkeyModeIfUnfocused();
 		}
 	}
 
@@ -166,6 +184,27 @@ export class ShortcutManager extends Component {
 			}
 			this.enterHotkeyModeIfUnfocused();
 		}, 0);
+	}
+
+	/**
+	 * Whether an incoming editor focus event is likely Obsidian's startup
+	 * restoration auto-focusing the last active file, rather than a
+	 * genuine user click.
+	 *
+	 * There's no direct signal distinguishing "Obsidian auto-focused this"
+	 * from "the user clicked in" — both fire the same DOM focus event. This
+	 * approximates it: only the first editor focus since construction,
+	 * and only within a short window of plugin load, since Obsidian's
+	 * startup file restoration (including its own auto-focus of the
+	 * editor) happens very soon after the plugin's onLayoutReady fires.
+	 */
+	private isStartupAutoFocus(): boolean {
+		return (
+			this.plugin.settings.disableAutoFocusOnFileOpen &&
+			!this.hasInterceptedInitialFocus &&
+			Date.now() - this.constructedAt <
+				ShortcutManager.INITIAL_AUTO_FOCUS_WINDOW_MS
+		);
 	}
 
 	/**
@@ -198,6 +237,13 @@ export class ShortcutManager extends Component {
 			this.app.workspace.on(
 				"shortcuts:editor-focus-change",
 				(data) => {
+					if (data.focusing && this.isStartupAutoFocus()) {
+						this.hasInterceptedInitialFocus = true;
+						this.blurEditor();
+						this.enterHotkeyModeIfUnfocused();
+						return;
+					}
+
 					this.hotkeyMode = this.focusHandler.onEditorFocusChange(
 						data,
 						this.hotkeyMode,
