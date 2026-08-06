@@ -1,7 +1,7 @@
 {
 	"id": "shortcuts",
 	"name": "Command Shortcuts",
-	"version": "0.4.8",
+	"version": "0.4.9",
 	"minAppVersion": "1.4.4",
 	"description": "Activate commands using multiple shortcut methods.",
 	"author": "Johnny & Boninall",
