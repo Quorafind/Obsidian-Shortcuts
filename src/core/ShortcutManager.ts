@@ -134,6 +134,7 @@ export class ShortcutManager extends Component {
 		if (activeElement?.closest(".cm-contentContainer")) {
 			if (this.plugin.settings.disableAutoFocusOnFileOpen) {
 				this.blurEditor();
+				this.enterHotkeyModeIfUnfocused();
 				return;
 			}
 			this.app.workspace.trigger("shortcuts:editor-focus-change", {
@@ -146,11 +147,15 @@ export class ShortcutManager extends Component {
 
 	/**
 	 * When "disable editor auto-focus on open" is enabled, blur the editor
-	 * right after Obsidian focuses it on file-open/new-tab, so shortcut mode
-	 * stays active instead of getting cancelled by the auto-focus.
+	 * right after Obsidian focuses it on file-open/new-tab, then explicitly
+	 * re-enter shortcut mode.
 	 *
 	 * Deferred to the next tick because Obsidian focuses the editor
-	 * asynchronously relative to these workspace events.
+	 * asynchronously relative to these workspace events. Shortcut mode is
+	 * entered explicitly here rather than relying on the editor's "blur" DOM
+	 * event to cascade into it via auto-shortcut mode, since that event
+	 * doesn't fire when Obsidian tears down/hides a leaf without a genuine
+	 * focus transfer (e.g. switching to a blank new tab with no editor).
 	 */
 	private blurAutoFocusedEditor(): void {
 		if (!this.plugin.settings.disableAutoFocusOnFileOpen) return;
@@ -159,7 +164,29 @@ export class ShortcutManager extends Component {
 			if (document.activeElement?.closest(".cm-contentContainer")) {
 				this.blurEditor();
 			}
+			this.enterHotkeyModeIfUnfocused();
 		}, 0);
+	}
+
+	/**
+	 * Explicitly enters shortcut mode when nothing legitimately holds
+	 * keyboard focus (no input/textarea/contenteditable). Respects
+	 * auto-shortcut mode, since that setting is what defines "shortcut mode
+	 * is active whenever nothing else needs focus".
+	 */
+	private enterHotkeyModeIfUnfocused(): void {
+		if (!this.plugin.settings.autoShortcutMode || this.hotkeyMode) return;
+
+		const activeElement = document.activeElement;
+		const hasLegitimateFocus =
+			activeElement instanceof HTMLInputElement ||
+			activeElement instanceof HTMLTextAreaElement ||
+			(activeElement instanceof HTMLElement &&
+				activeElement.isContentEditable);
+
+		if (hasLegitimateFocus) return;
+
+		this.programaticallyEnterHotkeyMode();
 	}
 
 	/**
