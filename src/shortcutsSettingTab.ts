@@ -207,7 +207,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			)
 			.addText((text) => {
 				text
-					.setPlaceholder("i")
+					.setPlaceholder(DEFAULT_KEY_SEQUENCE_SETTINGS.focusKey)
 					.setValue(this.plugin.settings.focusKey ?? "")
 					.onChange((value) => {
 						const key = value.slice(-1);
@@ -308,7 +308,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName("Editor scope mode").setHeading();
 
 		containerEl.createEl("p", {
-			text: "Enable continuous shortcut execution in the editor without repeatedly pressing Esc. This allows you to trigger multiple shortcuts in sequence (for example Q, then Q+S, then Q+T) without leaving shortcut mode between commands.",
+			text: "Enable continuous shortcut execution in the editor without repeatedly pressing esc. This allows you to trigger multiple shortcuts in sequence (for example q, then q+s, then q+t) without leaving shortcut mode between commands.",
 			cls: "setting-item-description",
 		});
 
