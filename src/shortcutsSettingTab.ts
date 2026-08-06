@@ -58,6 +58,7 @@ export const DEFAULT_KEY_SEQUENCE_SETTINGS: KeySequenceSettings = {
 	editorScopeTrigger: "Alt-s s",
 	editorScopeShowBorder: true,
 	focusKey: "i",
+	disableAutoFocusOnFileOpen: false,
 	firstLoaded: true,
 };
 
@@ -216,6 +217,21 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 					});
 				text.inputEl.maxLength = 1;
 				text.inputEl.addClass("shortcuts-focus-key-input");
+			});
+
+		new Setting(containerEl)
+			.setName("Disable editor auto-focus on open")
+			.setDesc(
+				"Keep the editor unfocused on file open or in a new tab so a shortcut fires immediately. Requires auto-shortcuts mode.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.disableAutoFocusOnFileOpen)
+					.onChange((value) => {
+						this.plugin.settings.disableAutoFocusOnFileOpen =
+							value;
+						void this.plugin.saveSettings();
+					});
 			});
 
 		new Setting(containerEl)

@@ -63,6 +63,17 @@ export class ShortcutManager extends Component {
 	public hotkeyMode: boolean = false;
 	private triggerKey: string;
 
+	/**
+	 * View types "disable editor auto-focus on open" intervenes on.
+	 * "empty" is Obsidian's blank "New tab" view — everything else
+	 * (graph, canvas, PDF, sidebar panes, ...) is left alone.
+	 */
+	private static readonly AUTO_FOCUS_RELEVANT_VIEW_TYPES = new Set([
+		"markdown",
+		"empty",
+	]);
+	private pendingAutoFocusTimeoutIds: number[] = [];
+
 	constructor(
 		plugin: ShortcutsPlugin,
 		app: App,
@@ -130,14 +141,123 @@ export class ShortcutManager extends Component {
 	 * Check and trigger initial focus event
 	 */
 	private checkInitialFocus(): void {
-		const activeElement = document.activeElement;
-		if (activeElement?.closest(".cm-contentContainer")) {
-			this.app.workspace.trigger("shortcuts:editor-focus-change", {
-				focusing: true,
-				editor: null,
-				pos: { from: 0, to: 0 },
-			});
+		if (!this.plugin.settings.disableAutoFocusOnFileOpen) {
+			const activeElement = document.activeElement;
+			if (activeElement?.closest(".cm-contentContainer")) {
+				this.app.workspace.trigger("shortcuts:editor-focus-change", {
+					focusing: true,
+					editor: null,
+					pos: { from: 0, to: 0 },
+				});
+			}
+			return;
 		}
+
+		if (this.shouldInterceptAutoFocus()) {
+			this.scheduleAutoFocusInterception();
+		}
+	}
+
+	/**
+	 * Handles "disable editor auto-focus on open" for a file-open or
+	 * active-leaf-change event.
+	 */
+	private onFileOpenOrLeafChange(): void {
+		if (!this.shouldInterceptAutoFocus()) return;
+		this.scheduleAutoFocusInterception();
+	}
+
+	/**
+	 * Whether "disable editor auto-focus on open" should act right now:
+	 * the setting is on, auto-shortcut mode is on (otherwise there'd be no
+	 * way to re-enter shortcut mode after blurring, leaving the editor
+	 * worse off than before), and the active leaf is one this feature
+	 * actually applies to.
+	 */
+	private shouldInterceptAutoFocus(): boolean {
+		return (
+			this.plugin.settings.disableAutoFocusOnFileOpen &&
+			this.plugin.settings.autoShortcutMode &&
+			this.isAutoFocusRelevantLeaf()
+		);
+	}
+
+	/**
+	 * Whether the active leaf is a markdown editor or Obsidian's blank
+	 * "New tab" placeholder — the only view types this feature should
+	 * touch. Excludes graph/canvas/PDF/sidebar views, where forcing
+	 * shortcut mode on every switch would be surprising and unrelated to
+	 * "opening a file."
+	 */
+	private isAutoFocusRelevantLeaf(): boolean {
+		const viewType = this.app.workspace.activeLeaf?.view?.getViewType();
+		return (
+			viewType !== undefined &&
+			ShortcutManager.AUTO_FOCUS_RELEVANT_VIEW_TYPES.has(viewType)
+		);
+	}
+
+	/**
+	 * Blurs the editor if Obsidian has auto-focused it, then falls back to
+	 * arming shortcut mode directly for the case nothing was ever focused
+	 * (e.g. a blank "New tab"). Blurring flows through the same "blur" DOM
+	 * event and FocusHandler cascade as every other focus-loss path in this
+	 * class, so hotkeyMode ends up consistent through one code path rather
+	 * than a second one bypassing it.
+	 */
+	private blurEditorIfAutoFocused(): void {
+		if (document.activeElement?.closest(".cm-contentContainer")) {
+			this.blurEditor();
+		}
+		this.enterHotkeyModeIfUnfocused();
+	}
+
+	/**
+	 * Schedules blurEditorIfAutoFocused() immediately and again at a couple
+	 * of short delays, to catch Obsidian's auto-focus whether it already
+	 * happened or is about to happen asynchronously — without guessing from
+	 * elapsed time. Clears any previously scheduled checks first, so
+	 * file-open and active-leaf-change firing together for one navigation
+	 * collapses into one set of timers instead of two independent ones.
+	 */
+	private scheduleAutoFocusInterception(): void {
+		this.clearPendingAutoFocusChecks();
+		this.blurEditorIfAutoFocused();
+		this.pendingAutoFocusTimeoutIds.push(
+			window.setTimeout(() => this.blurEditorIfAutoFocused(), 50),
+			window.setTimeout(() => this.blurEditorIfAutoFocused(), 250)
+		);
+	}
+
+	/**
+	 * Cancels any pending auto-focus-interception timers.
+	 */
+	private clearPendingAutoFocusChecks(): void {
+		this.pendingAutoFocusTimeoutIds.forEach((id) =>
+			window.clearTimeout(id)
+		);
+		this.pendingAutoFocusTimeoutIds = [];
+	}
+
+	/**
+	 * Explicitly enters shortcut mode when nothing legitimately holds
+	 * keyboard focus (no input/textarea/contenteditable). Respects
+	 * auto-shortcut mode, since that setting is what defines "shortcut mode
+	 * is active whenever nothing else needs focus".
+	 */
+	private enterHotkeyModeIfUnfocused(): void {
+		if (!this.plugin.settings.autoShortcutMode || this.hotkeyMode) return;
+
+		const activeElement = document.activeElement;
+		const hasLegitimateFocus =
+			activeElement instanceof HTMLInputElement ||
+			activeElement instanceof HTMLTextAreaElement ||
+			(activeElement instanceof HTMLElement &&
+				activeElement.isContentEditable);
+
+		if (hasLegitimateFocus) return;
+
+		this.programaticallyEnterHotkeyMode();
 	}
 
 	/**
@@ -187,6 +307,19 @@ export class ShortcutManager extends Component {
 						);
 				}
 			)
+		);
+
+		// Prevent editor auto-focus on file open (startup) / new tab, when enabled
+		this.plugin.registerEvent(
+			this.app.workspace.on("file-open", () => {
+				this.onFileOpenOrLeafChange();
+			})
+		);
+
+		this.plugin.registerEvent(
+			this.app.workspace.on("active-leaf-change", () => {
+				this.onFileOpenOrLeafChange();
+			})
 		);
 
 		// Status bar click
@@ -511,6 +644,7 @@ export class ShortcutManager extends Component {
 	 * Clean up resources
 	 */
 	unload(): void {
+		this.clearPendingAutoFocusChecks();
 		this.editorScopeMatcher.dispose();
 		this.sequenceMatcher.dispose();
 		this.notificationService.dispose();
