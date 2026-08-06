@@ -1,8 +1,8 @@
 {
 	"id": "shortcuts",
 	"name": "Command Shortcuts",
-	"version": "0.4.7",
-	"minAppVersion": "0.15.0",
+	"version": "0.4.8",
+	"minAppVersion": "1.4.4",
 	"description": "Activate commands using multiple shortcut methods.",
 	"author": "Johnny & Boninall",
 	"authorUrl": "https://github.com/Quorafind",
