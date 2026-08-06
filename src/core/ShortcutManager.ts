@@ -132,12 +132,34 @@ export class ShortcutManager extends Component {
 	private checkInitialFocus(): void {
 		const activeElement = document.activeElement;
 		if (activeElement?.closest(".cm-contentContainer")) {
+			if (this.plugin.settings.disableAutoFocusOnFileOpen) {
+				this.blurEditor();
+				return;
+			}
 			this.app.workspace.trigger("shortcuts:editor-focus-change", {
 				focusing: true,
 				editor: null,
 				pos: { from: 0, to: 0 },
 			});
 		}
+	}
+
+	/**
+	 * When "disable editor auto-focus on open" is enabled, blur the editor
+	 * right after Obsidian focuses it on file-open/new-tab, so shortcut mode
+	 * stays active instead of getting cancelled by the auto-focus.
+	 *
+	 * Deferred to the next tick because Obsidian focuses the editor
+	 * asynchronously relative to these workspace events.
+	 */
+	private blurAutoFocusedEditor(): void {
+		if (!this.plugin.settings.disableAutoFocusOnFileOpen) return;
+
+		window.setTimeout(() => {
+			if (document.activeElement?.closest(".cm-contentContainer")) {
+				this.blurEditor();
+			}
+		}, 0);
 	}
 
 	/**
@@ -187,6 +209,19 @@ export class ShortcutManager extends Component {
 						);
 				}
 			)
+		);
+
+		// Prevent editor auto-focus on file open (startup) / new tab, when enabled
+		this.plugin.registerEvent(
+			this.app.workspace.on("file-open", () => {
+				this.blurAutoFocusedEditor();
+			})
+		);
+
+		this.plugin.registerEvent(
+			this.app.workspace.on("active-leaf-change", () => {
+				this.blurAutoFocusedEditor();
+			})
 		);
 
 		// Status bar click
