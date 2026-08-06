@@ -222,7 +222,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Disable editor auto-focus on open")
 			.setDesc(
-				"Keep the editor unfocused when a file opens at startup or in a new tab, so you can jump straight into a shortcut instead of pressing Esc first.",
+				"Keep the editor unfocused on file open or in a new tab so a shortcut fires immediately. Requires auto-shortcuts mode.",
 			)
 			.addToggle((toggle) => {
 				toggle
