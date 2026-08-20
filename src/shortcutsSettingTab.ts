@@ -572,6 +572,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 
 		let comboEl: HTMLElement;
 		let iconEl: HTMLElement;
+		let specialContainerEl: HTMLElement | null = null;
 		const container = containerEl.createDiv({
 			cls: "special-thanks-container",
 		});
@@ -581,6 +582,9 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 				cls: "special-container",
 			},
 			(el) => {
+				specialContainerEl = el;
+				el.setAttribute("tabindex", "0");
+				el.setAttribute("role", "button");
 				iconEl = el.createDiv({ cls: "special-icon" });
 				setIcon(iconEl, "scissors");
 				el.createDiv({
@@ -600,19 +604,31 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			},
 		);
 
+		if (!specialContainerEl) return;
+
 		this.plugin.clearAllListeners();
 		this.plugin.konamiListener = new Component();
 
+		const konamiKeys = new Set(
+			konamiCode.map((key) => key.toLowerCase()),
+		);
+
 		this.plugin.konamiListener.registerDomEvent(
-			document,
+			specialContainerEl,
 			"keydown",
 			(event) => {
 				if (this.isCapturing) return;
 
-				if (
-					event.key.toLowerCase() ===
-					konamiCode[konamiIndex].toLowerCase()
-				) {
+				const key = event.key.toLowerCase();
+				if (!konamiKeys.has(key)) return;
+
+				// Obsidian's settings list also uses arrow keys for keyboard
+				// navigation; stop it from stealing the sequence once this
+				// badge has focus.
+				event.preventDefault();
+				event.stopPropagation();
+
+				if (key === konamiCode[konamiIndex].toLowerCase()) {
 					this.highlightKey(comboEl, konamiIndex);
 					konamiIndex++;
 					if (konamiIndex === konamiCode.length) {
@@ -620,7 +636,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 						this.triggerConfetti();
 						window.setTimeout(() => {
 							window.open(
-								"https://github.com/Quorafind/Obsidian-Shortcuts/wiki/Donate",
+								"https://buymeacoffee.com/johnny1093",
 								"_blank",
 							);
 						}, 400);
