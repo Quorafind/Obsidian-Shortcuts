@@ -59,6 +59,18 @@ export class StatusBarManager {
 				placement: "top",
 			});
 		}
+
+		// Apply initial visibility from settings
+		this.setVisible(this.plugin.settings.showStatusBarIcon);
+	}
+
+	/**
+	 * Show or hide the status bar item
+	 *
+	 * @param visible - True to show the status bar icon, false to hide it
+	 */
+	setVisible(visible: boolean): void {
+		visible ? this.statusBarItem.show() : this.statusBarItem.hide();
 	}
 
 	/**
