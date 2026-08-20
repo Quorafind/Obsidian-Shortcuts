@@ -108,6 +108,11 @@ If your plugin does not need CSS, delete this file.
 	gap: var(--size-2-1);
 }
 
+.shortcuts-setting-tab .special-container:focus {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
 .shortcuts-setting-tab .special-container .special-icon {
 	--icon-size: 48px;
 }
@@ -165,24 +170,8 @@ If your plugin does not need CSS, delete this file.
 	margin-top: 0;
 }
 
-.theme-dark
-	.shortcuts-setting-tab
-	.special-container
-	.special-combo
-	span.mod-active {
+.shortcuts-setting-tab .special-container .special-combo span.mod-active {
 	color: var(--interactive-accent);
-	opacity: 100%;
-
-	font-weight: var(--font-extrabold);
-	--icon-stroke: 2px;
-}
-
-.theme-light
-	.shortcuts-setting-tab
-	.special-container
-	.special-combo
-	span.mod-active {
-	color: var(--text-error);
 	opacity: 100%;
 
 	font-weight: var(--font-extrabold);
