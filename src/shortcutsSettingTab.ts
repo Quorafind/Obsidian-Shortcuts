@@ -54,6 +54,7 @@ export const DEFAULT_KEY_SEQUENCE_SETTINGS: KeySequenceSettings = {
 	autoShortcutMode: true,
 	sequenceTimeoutDuration: 5000,
 	showCurrentSequence: true,
+	showStatusBarIcon: true,
 	editorScopeEnabled: true,
 	editorScopeTrigger: "Alt-s s",
 	editorScopeShowBorder: true,
@@ -287,6 +288,19 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 					.onChange((value) => {
 						this.plugin.settings.showCurrentSequence = value;
 						void this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Show status bar icon")
+			.setDesc("Show the shortcuts icon in the status bar")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.showStatusBarIcon)
+					.onChange((value) => {
+						this.plugin.settings.showStatusBarIcon = value;
+						void this.plugin.saveSettings();
+						this.plugin.hotkeyMonitor.setStatusBarVisible(value);
 					});
 			});
 

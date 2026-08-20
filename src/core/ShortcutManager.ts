@@ -549,6 +549,15 @@ export class ShortcutManager extends Component {
 	}
 
 	/**
+	 * Show or hide the status bar icon
+	 *
+	 * @param visible - True to show the status bar icon, false to hide it
+	 */
+	setStatusBarVisible(visible: boolean): void {
+		this.statusBarManager.setVisible(visible);
+	}
+
+	/**
 	 * Update configuration from settings
 	 *
 	 * Refreshes shortcuts and saves settings

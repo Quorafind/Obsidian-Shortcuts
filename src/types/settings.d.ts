@@ -9,6 +9,7 @@ interface KeySequenceSettings {
 	autoShortcutMode: boolean;
 	sequenceTimeoutDuration: number;
 	showCurrentSequence: boolean;
+	showStatusBarIcon: boolean;
 
 	// Editor Scope Mode settings
 	editorScopeEnabled: boolean;
