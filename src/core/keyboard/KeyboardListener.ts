@@ -69,7 +69,7 @@ export class KeyboardListener {
 		hotkeyMode: boolean,
 		triggerKey: string
 	): KeyboardEventResult {
-		const currentKeyCode = keycode(event.keyCode);
+		const currentKeyCode = keycode(event);
 
 		// Check if in input or contenteditable (not CodeMirror)
 		if (this.isTargetInInputOrContentEditable(event)) {

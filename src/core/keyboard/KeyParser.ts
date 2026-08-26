@@ -44,7 +44,7 @@ export class KeyParser {
 		if (key in this.modifierKeyMap) {
 			key = this.modifierKeyMap[key];
 		} else {
-			key = keycode(event.keyCode);
+			key = keycode(event);
 		}
 
 		// Convert single character keys to uppercase

@@ -190,7 +190,7 @@ export class ShortcutManager extends Component {
 	 * "opening a file."
 	 */
 	private isAutoFocusRelevantLeaf(): boolean {
-		const viewType = this.app.workspace.activeLeaf?.view?.getViewType();
+		const viewType = this.app.workspace.getMostRecentLeaf()?.view?.getViewType();
 		return (
 			viewType !== undefined &&
 			ShortcutManager.AUTO_FOCUS_RELEVANT_VIEW_TYPES.has(viewType)

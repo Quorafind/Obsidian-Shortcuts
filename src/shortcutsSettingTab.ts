@@ -65,6 +65,14 @@ export const DEFAULT_KEY_SEQUENCE_SETTINGS: KeySequenceSettings = {
 
 const modifierKeys = [16, 17, 18, 91, 93];
 
+// Recovers the legacy numeric key code for a KeyboardEvent without touching
+// the deprecated `.keyCode`/`.which` properties directly: `keycode()` reads
+// them internally, and its name→code map is the exact inverse of the
+// code→name map it used to produce that name, so the round trip is lossless.
+function getKeyCodeFromEvent(e: KeyboardEvent): number {
+	return keycode(keycode(e));
+}
+
 export class ShortcutsSettingTab extends PluginSettingTab {
 	plugin: ShortcutsPlugin;
 	private commandId: string | null = null;
@@ -837,7 +845,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			e.preventDefault();
 			e.stopImmediatePropagation();
 
-			const keyCode = e.keyCode;
+			const keyCode = getKeyCodeFromEvent(e);
 			const now = Date.now();
 
 			const isModifier = modifierKeys.includes(keyCode);
@@ -870,7 +878,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 		};
 
 		const handleKeyUp = (e: KeyboardEvent) => {
-			const keyCode = e.keyCode;
+			const keyCode = getKeyCodeFromEvent(e);
 			if (modifierKeys.includes(keyCode)) {
 				pressedModifiers.delete(keyCode);
 			}
@@ -1067,7 +1075,7 @@ export class ShortcutsSettingTab extends PluginSettingTab {
 			e.preventDefault();
 			e.stopPropagation();
 
-			const keyCode = e.keyCode;
+			const keyCode = getKeyCodeFromEvent(e);
 			const now = Date.now();
 
 			if (
